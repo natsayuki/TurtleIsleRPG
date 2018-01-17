@@ -252,8 +252,14 @@ partybutton.rect.y = 0
 sprites_list.add(partybutton)
 
 
-def run(arg):
+def evaluate(arg):
     """executes code"""
+    try:
+        return(eval(arg))
+    except:
+        return 'error lol'
+
+def execute(arg):
     try:
         return(exec(arg))
     except:
@@ -262,7 +268,8 @@ def run(arg):
 console = PyCon.PyCon(screen,
                       (0,0,1000,650 / 4),
                       functions = {
-                                    "run":run
+                                    "eval":evaluate,
+                                    "exec":execute
                                     },
                       key_calls = {},
                       vari={"A":100,"B":200,"C":300},
@@ -290,7 +297,7 @@ def buildPartyMenu():
         placementcounter+=150
         party_list.add(image)
         party_list.add(texthealth)
-        party_menu_list.append(image)
+        party_menu_list.append((image,i))
 
 
 party.add(turtle)
@@ -366,12 +373,12 @@ while running:
 
             if len(party_list) > 0:
                 for sprite in party_menu_list:
-                    if sprite.rect.collidepoint(event.pos):
+                    if sprite[0].rect.collidepoint(event.pos):
                         if selection1: #first selected
-                            if selection1 == sprite:
+                            if selection1 == sprite[1]:
                                 selection1 = False
                             else:
-                                selection2 = sprite
+                                selection2 = sprite[1]
                                 sprite1,sprite2 = backgroundparty.index(selection1), backgroundparty.index(selection2)
                                 backgroundparty[sprite1], backgroundparty[sprite2] = backgroundparty[sprite2], backgroundparty[sprite1]
 
@@ -379,7 +386,7 @@ while running:
                                 selection2 = False
 
                         else: #none selected
-                            selection1 = sprite
+                            selection1 = sprite[1]
 
     keys = pygame.key.get_pressed()
     if console.active == False:
