@@ -30,7 +30,10 @@ party_list = pygame.sprite.Group()
 class base_sprite(pygame.sprite.Sprite): #turtle spawned in middle of screen
         def __init__(self, color=(0,0,0), width=0, height=0, image=None,health=100):
             pygame.sprite.Sprite.__init__(self)
-            self.image = pygame.image.load(image)
+            if "Surface" in type(image).__name__:
+                self.image = image
+            else:
+                self.image = pygame.image.load(image)
             pygame.draw.rect(self.image, color, [5000000,5000000,width,height])
             self.rect = self.image.get_rect()
             self.health = health
@@ -101,12 +104,16 @@ class entity():
             return self.health
         def equip(self, item):
             if type(item) == entity.item.equipable:
+                for i in item.effects:
+                    exec('self.' + i + ' += ' + item.effects[i])
                 exec('self.' + item.type + ' = item')
                 return True
             return False
         def unequip(self, type):
             if eval('self.' + type) != None:
                 item = eval('self.' + type)
+                for i in item.effects:
+                    exec('self.' + i + ' -= ' + item.effects[i])
                 exec('self.' + type + ' = None')
                 return item
             return False
@@ -161,8 +168,26 @@ class entity():
                 self.effects = effects
         class keyItem(pygame.sprite.Sprite):
             None
-
-
+class smallTurtle(entity.playerCharacter):
+    def __init__(self, initHealth, initAttack, initDeffence, initStrength, initMagic, initRanged, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(image)
+        pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
+        self.rect = self.image.get_rect()
+        self.health = initHealth
+        self.attack = initAttack
+        self.deffence = initDeffence
+        self.strength = initStrength
+        self.magic = initMagic
+        self.ranged = initRanged
+        self.level = initLevel
+        self.exp = initExp
+        self.isAlive = True
+        self.maxHealth = maxHealth
+        self.head = head
+        self.torso = torso
+        self.feet = feet
+        self.hand = hand
 
 
 
@@ -199,6 +224,11 @@ fight = False
 active_mob = None
 menubool = False
 scrollX = 0
+backgroundparty = []
+placementcounter = 25
+selection1 = False
+selection2 = False
+party_menu_list = []
 
 
 turtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\smallTurtle.png')
@@ -226,15 +256,32 @@ def buildPartyMenu():
     partymenu = base_sprite(image="images\\partyMenu.png")
     partymenu.rect.x = 0
     partymenu.rect.y = 500
-
-
     party_list.add(partymenu)
+    global placementcounter
+    for enum,i in enumerate(backgroundparty, 1):
+        if direction == "left" and enum == 1:
+            image = pygame.transform.flip(i.image,100,0)
+        else:
+            image = i.image
+        image = base_sprite(image = image)
+        image.rect.x = placementcounter
+        image.rect.y = 510
+        texthealth = text(f"Turtle {enum} - Hp: {i.health}","Comic Sans MS",16,(66, 134, 244),placementcounter-15,593.5,255)
+        placementcounter+=150
+        party_list.add(image)
+        party_list.add(texthealth)
+        party_menu_list.append(image)
+
 
 party.add(turtle)
+backgroundparty.append(turtle)
 current_turtle = turtle
 #party.add(ninjaTurtle)
 #party.add(wizardTurtle)
 #party.add(knightTurtle)
+backgroundparty.append(ninjaTurtle)
+backgroundparty.append(wizardTurtle)
+backgroundparty.append(knightTurtle)
 
 pygame.key.set_repeat(10,10)
 def spawnmob():
@@ -308,9 +355,30 @@ while running:
                 if menubool:
                     party_list.empty()
                     menubool = False
+                    placementcounter = 25
                 else:
                     buildPartyMenu()
                     menubool = True
+
+            if len(party_list) > 0:
+                for sprite in party_menu_list:
+                    if sprite.rect.collidepoint(event.pos):
+                        if selection1: #first selected
+                            if selection1 == sprite:
+                                selection1 = False
+                            else:
+                                selection2 = sprite
+                                sprite1,sprite2 = backgroundparty.index(selection1), backgroundparty.index(selection2)
+                                backgroundparty[sprite1], backgroundparty[sprite2] = backgroundparty[sprite2], backgroundparty[sprite1]
+
+                                selection1 = False
+                                selection2 = False
+
+                        else: #none selected
+                            selection1 = sprite
+
+
+
 
 
     if direction != olddirection:
