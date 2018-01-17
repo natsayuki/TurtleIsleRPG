@@ -56,11 +56,6 @@ class mob_class(pygame.sprite.Sprite): #turtle spawned in middle of screen
         def attack(self): #todo
             pass
 
-class utils():
-    def getType(self, thing):
-        return type(thing)
-
-utils = utils()
 
 class entity():
 
@@ -111,7 +106,7 @@ class entity():
                 self.health = self.maxHealth
             return self.health
         def equip(self, item):
-            if type(item) == __main__.entity.item.equipable:
+            if type(item).__name__ == 'equipable':
                 for i in item.effects:
                     exec('self.' + i + ' += ' + item.effects[i])
                 exec('self.' + item.type + ' = item')
@@ -126,7 +121,7 @@ class entity():
                 return item
             return False
         def consume(self, item):
-            if type(item) == __main__.entity.item.consumable:
+            if type(item).__name__ == 'consumable':
                 for index, i in enumerate(item.effects, 0):
                     exec('self.' + i + ' += ' + item.effects[i])
                 return True
