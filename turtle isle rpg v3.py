@@ -60,14 +60,14 @@ class mob_class(pygame.sprite.Sprite): #turtle spawned in middle of screen
 class entity():
 
     class playerCharacter(pygame.sprite.Sprite):
-        def __init__(self, initHealth, initAttack, initDeffence, initStrength, initMagic, initRanged, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+        def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initRanged, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
             pygame.sprite.Sprite.__init__(self)
             self.image = pygame.image.load(image)
             pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
             self.rect = self.image.get_rect()
             self.health = initHealth
             self.attack = initAttack
-            self.deffence = initDeffence
+            self.defence = initdefence
             self.strength = initStrength
             self.magic = initMagic
             self.ranged = initRanged
@@ -129,10 +129,10 @@ class entity():
 
 
     class enemyCharacter(pygame.sprite.Sprite):
-        def __init__(self, name, health, attack, deffence, strength, magic, ranged, level, maxHealth, isAlive, head, torso, feet, hand):
+        def __init__(self, name, health, attack, defence, strength, magic, ranged, level, maxHealth, isAlive, head, torso, feet, hand):
             self.health = health
             self.attack = attack
-            self.defence = deffence
+            self.defence = defence
             self.strength = strength
             self.magic = magic
             self.ranged = ranged
@@ -172,14 +172,14 @@ class entity():
         class keyItem(pygame.sprite.Sprite):
             None
 class smallTurtle(entity.playerCharacter):
-    def __init__(self, initHealth, initAttack, initDeffence, initStrength, initMagic, initRanged, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+    def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initRanged, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(image)
         pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
         self.rect = self.image.get_rect()
         self.health = initHealth
         self.attack = initAttack
-        self.deffence = initDeffence
+        self.defence = initdefence
         self.strength = initStrength
         self.magic = initMagic
         self.ranged = initRanged
@@ -257,7 +257,7 @@ antiMultiPotion = entity.item.consumable(({'health': -10, 'attack': -10, 'streng
 sword = entity.item.equipable('sword', 'hand', ({'attack': 10}))
 syphonSword = entity.item.equipable('syphonSword', 'hand', ({'attack': 50, 'health': -20}))
 chestplate = entity.item.equipable('chestplate', 'torso', ({'defence': 20}))
-multiBoots = entity.item.equipable('multiBoots', 'feet', ({'attack': 10, 'strength': 10, 'defence': 1}))
+multiBoots = entity.item.equipable('multiBoots', 'feet', ({'attack': 10, 'strength': 10, 'defence': 10}))
 
 partybutton = base_sprite(image="images\\partyButton.png")
 partybutton.rect.x = 0
