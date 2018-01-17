@@ -108,7 +108,7 @@ class entity():
         def equip(self, item):
             if type(item).__name__ == 'equipable':
                 for i in item.effects:
-                    exec('self.' + i + ' += ' + item.effects[i])
+                    exec('self.' + i + ' += ' + str(item.effects[i]))
                 exec('self.' + item.type + ' = item')
                 return True
             return False
@@ -116,14 +116,14 @@ class entity():
             if eval('self.' + type) != None:
                 item = eval('self.' + type)
                 for i in item.effects:
-                    exec('self.' + i + ' -= ' + item.effects[i])
+                    exec('self.' + i + ' -= ' + str(item.effects[i]))
                 exec('self.' + type + ' = None')
                 return item
             return False
         def consume(self, item):
             if type(item).__name__ == 'consumable':
                 for index, i in enumerate(item.effects, 0):
-                    exec('self.' + i + ' += ' + item.effects[i])
+                    exec('self.' + i + ' += ' + str(item.effects[i]))
                 return True
             return False
 
@@ -232,6 +232,7 @@ placementcounter = 25
 selection1 = False
 selection2 = False
 party_menu_list = []
+switchdirection = direction
 
 
 turtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\smallTurtle.png')
@@ -388,11 +389,16 @@ while running:
                             if selection1 == sprite[1]:
                                 selection1 = False
                             else:
+                                print(direction)
+                                print(switchdirection)
                                 selection2 = sprite[1]
                                 sprite1,sprite2 = backgroundparty.index(selection1), backgroundparty.index(selection2)
                                 backgroundparty[sprite1], backgroundparty[sprite2] = backgroundparty[sprite2], backgroundparty[sprite1]
                                 backgroundparty[0].rect.x = current_turtle.rect.x
                                 backgroundparty[0].rect.y = current_turtle.rect.y
+                                if switchdirection != direction:
+                                    backgroundparty[0].image = pygame.transform.flip(backgroundparty[0].image,100,0)
+                                    switchdirection = direction
                                 current_turtle = backgroundparty[0]
                                 selection1 = False
                                 selection2 = False
