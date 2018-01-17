@@ -232,9 +232,8 @@ placementcounter = 25
 selection1 = False
 selection2 = False
 party_menu_list = []
-switchdirection = direction
 
-
+images = ['images\\smallTurtle.png','images\\NinjaTurtle.png','images\\WizardTurtle.png','images\\KnightTurtle.png']
 turtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\smallTurtle.png')
 ninjaTurtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\NinjaTurtle.png')
 wizardTurtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\WizardTurtle.png')
@@ -249,10 +248,16 @@ knightTurtle.rect.x = 250
 knightTurtle.rect.y = 400
 
 potion = entity.item.consumable(({'health': 10}))
+antiPotion = entity.item.consumable(({'health': -10}))
 strengthPotion = entity.item.consumable(({'strength': 10}))
 antiStrengthPotion = entity.item.consumable(({'strength': -10}))
+multiPotion = entity.item.consumable(({'health': 10, 'attack': 10, 'strength': 10}))
+antiMultiPotion = entity.item.consumable(({'health': -10, 'attack': -10, 'strength': -10}))
 
 sword = entity.item.equipable('sword', 'hand', ({'attack': 10}))
+syphonSword = entity.item.equipable('syphonSword', 'hand', ({'attack': 50, 'health': -20}))
+chestplate = entity.item.equipable('chestplate', 'torso', ({'defence': 20}))
+multiBoots = entity.item.equipable('multiBoots', 'feet', ({'attack': 10, 'strength': 10, 'defence': 1}))
 
 partybutton = base_sprite(image="images\\partyButton.png")
 partybutton.rect.x = 0
@@ -294,11 +299,11 @@ def buildPartyMenu():
     party_list.add(partymenu)
     global placementcounter
     for enum,i in enumerate(backgroundparty, 1):
-        if direction == "left" and enum == 1:
-            image = pygame.transform.flip(i.image,100,0)
+        if enum == 0:
+            enumfixed = 0
         else:
-            image = i.image
-        image = base_sprite(image = image)
+            enumfixed = enum-1
+        image = base_sprite(image = images[enumfixed])
         image.rect.x = placementcounter
         image.rect.y = 510
         texthealth = text(f"Turtle {enum} - Hp: {i.health}","Comic Sans MS",16,(66, 134, 244),placementcounter-15,593.5,255)
@@ -357,8 +362,8 @@ while running:
         #fight = False
 
 
-    if randint(0,500) == 0: #mob spawner
-        spawnmob()
+    #if randint(0,500) == 0: #mob spawner
+        #spawnmob()
 
     eventlist = pygame.event.get()
     console.process_input(eventlist)
@@ -389,19 +394,22 @@ while running:
                             if selection1 == sprite[1]:
                                 selection1 = False
                             else:
-                                print(direction)
-                                print(switchdirection)
                                 selection2 = sprite[1]
                                 sprite1,sprite2 = backgroundparty.index(selection1), backgroundparty.index(selection2)
                                 backgroundparty[sprite1], backgroundparty[sprite2] = backgroundparty[sprite2], backgroundparty[sprite1]
+                                images[sprite1],images[sprite2] = images[sprite2],images[sprite1]
                                 backgroundparty[0].rect.x = current_turtle.rect.x
                                 backgroundparty[0].rect.y = current_turtle.rect.y
-                                if switchdirection != direction:
+                                backgroundparty[0].image = pygame.image.load(images[0])
+                                if direction == "left":
                                     backgroundparty[0].image = pygame.transform.flip(backgroundparty[0].image,100,0)
-                                    switchdirection = direction
                                 current_turtle = backgroundparty[0]
                                 selection1 = False
                                 selection2 = False
+                                party_list.empty()
+                                placementcounter = 25
+                                party_menu_list = []
+                                buildPartyMenu()
 
                         else: #none selected
                             selection1 = sprite[1]
