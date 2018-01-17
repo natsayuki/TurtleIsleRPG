@@ -111,7 +111,7 @@ class entity():
                 self.health = self.maxHealth
             return self.health
         def equip(self, item):
-            if type(item) == entity.item.equipable:
+            if type(item) == __main__.entity.item.equipable:
                 for i in item.effects:
                     exec('self.' + i + ' += ' + item.effects[i])
                 exec('self.' + item.type + ' = item')
@@ -126,7 +126,7 @@ class entity():
                 return item
             return False
         def consume(self, item):
-            if type(item) == entity.item.consumable:
+            if type(item) == __main__.entity.item.consumable:
                 for index, i in enumerate(item.effects, 0):
                     exec('self.' + i + ' += ' + item.effects[i])
                 return True
