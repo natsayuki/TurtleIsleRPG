@@ -56,6 +56,12 @@ class mob_class(pygame.sprite.Sprite): #turtle spawned in middle of screen
         def attack(self): #todo
             pass
 
+class utils():
+    def getType(self, thing):
+        return type(thing)
+
+utils = utils()
+
 class entity():
 
     class playerCharacter(pygame.sprite.Sprite):
