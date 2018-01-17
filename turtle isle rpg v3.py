@@ -246,6 +246,12 @@ wizardTurtle.rect.y = 350
 knightTurtle.rect.x = 250
 knightTurtle.rect.y = 400
 
+potion = entity.item.consumable(({'health': 10}))
+strengthPotion = entity.item.consumable(({'strength': 10}))
+antiStrengthPotion = entity.item.consumable(({'strength': -10}))
+
+sword = entity.item.equipable('sword', 'hand', ({'attack': 10}))
+
 partybutton = base_sprite(image="images\\partyButton.png")
 partybutton.rect.x = 0
 partybutton.rect.y = 0
@@ -256,14 +262,14 @@ def evaluate(arg):
     """executes code"""
     try:
         return(eval(arg))
-    except:
-        return 'error lol'
+    except Exception as e:
+        return e
 
 def execute(arg):
     try:
         return(exec(arg))
-    except:
-        return 'error lol'
+    except Exception as e:
+        return e
 
 console = PyCon.PyCon(screen,
                       (0,0,1000,650 / 4),
@@ -324,6 +330,8 @@ def spawnmob():
     mobs_list.add(mob)
 
 while running:
+    party.empty()
+    party.add(current_turtle)
     while fight: #fight part
         eventlist = pygame.event.get()
         console.process_input(eventlist)
@@ -367,6 +375,7 @@ while running:
                     party_list.empty()
                     menubool = False
                     placementcounter = 25
+                    party_menu_list = []
                 else:
                     buildPartyMenu()
                     menubool = True
@@ -381,7 +390,9 @@ while running:
                                 selection2 = sprite[1]
                                 sprite1,sprite2 = backgroundparty.index(selection1), backgroundparty.index(selection2)
                                 backgroundparty[sprite1], backgroundparty[sprite2] = backgroundparty[sprite2], backgroundparty[sprite1]
-
+                                backgroundparty[0].rect.x = current_turtle.rect.x
+                                backgroundparty[0].rect.y = current_turtle.rect.y
+                                current_turtle = backgroundparty[0]
                                 selection1 = False
                                 selection2 = False
 
@@ -391,30 +402,30 @@ while running:
     keys = pygame.key.get_pressed()
     if console.active == False:
         if keys[pygame.K_w] or keys[pygame.K_UP]:
-            positions.append((turtle.rect.x,turtle.rect.y))
-            turtle.move('y', -8)
-            turtle.rect.clamp_ip(screen_rect)
+            positions.append((current_turtle.rect.x,current_turtle.rect.y))
+            current_turtle.move('y', -8)
+            current_turtle.rect.clamp_ip(screen_rect)
             move = True
 
         elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            positions.append((turtle.rect.x,turtle.rect.y))
-            turtle.move('y', 8)
-            turtle.rect.clamp_ip(screen_rect)
+            positions.append((current_turtle.rect.x,current_turtle.rect.y))
+            current_turtle.move('y', 8)
+            current_turtle.rect.clamp_ip(screen_rect)
             move = True
 
         elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            positions.append((turtle.rect.x,turtle.rect.y))
-            turtle.move('x', -8)
-            turtle.rect.clamp_ip(screen_rect)
+            positions.append((current_turtle.rect.x,current_turtle.rect.y))
+            current_turtle.move('x', -8)
+            current_turtle.rect.clamp_ip(screen_rect)
             move = True
             direction = "left"
             if scrollX < 0:
                 scrollX += 8
 
         elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            positions.append((turtle.rect.x,turtle.rect.y))
-            turtle.move('x', 8)
-            turtle.rect.clamp_ip(screen_rect)
+            positions.append((current_turtle.rect.x,current_turtle.rect.y))
+            current_turtle.move('x', 8)
+            current_turtle.rect.clamp_ip(screen_rect)
             move = True
             direction = "right"
             scrollX -= 8
