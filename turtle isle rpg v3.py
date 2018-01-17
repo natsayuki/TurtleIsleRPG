@@ -254,7 +254,10 @@ sprites_list.add(partybutton)
 
 def run(arg):
     """executes code"""
-    return(eval(arg))
+    try:
+        return(exec(arg))
+    except:
+        return 'error lol'
 
 console = PyCon.PyCon(screen,
                       (0,0,1000,650 / 4),
@@ -315,10 +318,16 @@ def spawnmob():
 
 while running:
     while fight: #fight part
-        for event in pygame.event.get():
+        eventlist = pygame.event.get()
+        console.process_input(eventlist)
+        pygame.display.flip()
+        for event in eventlist:
             if event.type == pygame.QUIT:
                 running = False
                 fight=False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_F1:
+                    console.set_active()
 
         mob_fight.remove(mob_info)
         mob_info = text(f"{active_mob.name}: {active_mob.health}hp","Comic Sans MS",18,(66, 134, 244),active_mob.rect.x+50,active_mob.image.get_rect().size[1]+20,255)
@@ -326,6 +335,7 @@ while running:
         mob_fight.update()
         screen.fill(color) #gets rid of all sprites without removing them from groups
         mob_fight.draw(screen)
+        console.draw()
         pygame.display.flip()
         #fight = False
 
