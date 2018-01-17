@@ -2,6 +2,8 @@ import pygame
 from threading import Thread
 from time import sleep,time
 from random import randint,uniform,choice
+import PyCon
+from Functions import *
 
 ########
 # init #
@@ -249,6 +251,21 @@ partybutton.rect.x = 0
 partybutton.rect.y = 0
 sprites_list.add(partybutton)
 
+
+def run(arg):
+    """executes code"""
+    return(eval(arg))
+
+console = PyCon.PyCon(screen,
+                      (0,0,1000,650 / 4),
+                      functions = {
+                                    "run":run
+                                    },
+                      key_calls = {},
+                      vari={"A":100,"B":200,"C":300},
+                      syntax={re_function:console_func}
+                      )
+
 #########################
 # basic build functions #
 #########################
@@ -283,7 +300,8 @@ backgroundparty.append(ninjaTurtle)
 backgroundparty.append(wizardTurtle)
 backgroundparty.append(knightTurtle)
 
-pygame.key.set_repeat(10,10)
+#pygame.key.set_repeat(10,10)
+
 def spawnmob():
     mobs = {
         "patker":20
@@ -315,40 +333,16 @@ while running:
     if randint(0,500) == 0: #mob spawner
         spawnmob()
 
-
-    for event in pygame.event.get():
+    eventlist = pygame.event.get()
+    console.process_input(eventlist)
+    pygame.display.flip()
+    for event in eventlist:
         if event.type == pygame.QUIT:
             running = False
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w or event.key == pygame.K_UP:
-                positions.append((turtle.rect.x,turtle.rect.y))
-                turtle.move('y', -6.4)
-                turtle.rect.clamp_ip(screen_rect)
-                move = True
-
-            elif event.key == pygame.K_s or event.key == pygame.K_DOWN:
-                positions.append((turtle.rect.x,turtle.rect.y))
-                turtle.move('y', 6.4)
-                turtle.rect.clamp_ip(screen_rect)
-                move = True
-
-            elif event.key == pygame.K_a or event.key == pygame.K_LEFT:
-                positions.append((turtle.rect.x,turtle.rect.y))
-                turtle.move('x', -8)
-                turtle.rect.clamp_ip(screen_rect)
-                move = True
-                direction = "left"
-                if scrollX < 0:
-                    scrollX += 8
-
-            elif event.key == pygame.K_d or event.key == pygame.K_RIGHT:
-                positions.append((turtle.rect.x,turtle.rect.y))
-                turtle.move('x', 8)
-                turtle.rect.clamp_ip(screen_rect)
-                move = True
-                direction = "right"
-                scrollX -= 8
+            if event.key == pygame.K_F1:
+                console.set_active()
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if partybutton.rect.collidepoint(event.pos):
@@ -377,7 +371,36 @@ while running:
                         else: #none selected
                             selection1 = sprite
 
+    keys = pygame.key.get_pressed()
+    if console.active == False:
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            positions.append((turtle.rect.x,turtle.rect.y))
+            turtle.move('y', -8)
+            turtle.rect.clamp_ip(screen_rect)
+            move = True
 
+        elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            positions.append((turtle.rect.x,turtle.rect.y))
+            turtle.move('y', 8)
+            turtle.rect.clamp_ip(screen_rect)
+            move = True
+
+        elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            positions.append((turtle.rect.x,turtle.rect.y))
+            turtle.move('x', -8)
+            turtle.rect.clamp_ip(screen_rect)
+            move = True
+            direction = "left"
+            if scrollX < 0:
+                scrollX += 8
+
+        elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            positions.append((turtle.rect.x,turtle.rect.y))
+            turtle.move('x', 8)
+            turtle.rect.clamp_ip(screen_rect)
+            move = True
+            direction = "right"
+            scrollX -= 8
 
 
 
@@ -419,5 +442,6 @@ while running:
     party.draw(screen)
     mobs_list.draw(screen)
     party_list.draw(screen)
+    console.draw()
     pygame.display.flip()
     clock.tick(60)
