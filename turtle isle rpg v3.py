@@ -46,7 +46,7 @@ class mob_class(pygame.sprite.Sprite): #turtle spawned in middle of screen
             self.health = health
             self.name = name
         def move(self, diri, amount):
-            exec('self.rect.' + diri + ' += ' + str(amount))d
+            exec('self.rect.' + diri + ' += ' + str(amount))
 
         def attack(self): #todo
             pass
