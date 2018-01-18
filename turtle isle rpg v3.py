@@ -14,6 +14,7 @@ clock = pygame.time.Clock()
 screen = pygame.display.set_mode((1000,650))
 screen_rect = pygame.Rect((0, 0), (1000, 650))
 game_map = pygame.image.load("images\\testmap.png")
+pygame.display.set_caption("Turtle Isle RPG")
 
 #################
 # sprite groups #
@@ -61,7 +62,7 @@ class mob_class(pygame.sprite.Sprite): #turtle spawned in middle of screen
 class entity():
 
     class playerCharacter(pygame.sprite.Sprite):
-        def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initRanged, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+        def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initmagic, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
             pygame.sprite.Sprite.__init__(self)
             self.image = pygame.image.load(image)
             pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
@@ -71,7 +72,7 @@ class entity():
             self.defence = initdefence
             self.strength = initStrength
             self.magic = initMagic
-            self.ranged = initRanged
+            self.magic = initmagic
             self.level = initLevel
             self.exp = initExp
             self.isAlive = True
@@ -102,7 +103,7 @@ class entity():
                 self.isAlive = False
             return self.isAlive
         def damage(self, amount):
-            self.trueDamage(amount - (randint(3, 4) * self.defence))
+            self.trueDamage(amount / ((randint(3, 4) * self.defence)/100))
         def heal(self, amount):
             self.health += amount
             if self.health > self.maxHealth:
@@ -140,13 +141,12 @@ class entity():
 
 
     class enemyCharacter(pygame.sprite.Sprite):
-        def __init__(self, name, health, attack, defence, strength, magic, ranged, level, maxHealth, isAlive, head, torso, feet, hand):
+        def __init__(self, name, health, attack, defence, strength, magic, level, maxHealth, isAlive, head, torso, feet, hand):
             self.health = health
             self.attack = attack
             self.defence = defence
             self.strength = strength
             self.magic = magic
-            self.ranged = ranged
             self.level = level
             self.maxHealth = maxHealth
             self.head = head
@@ -165,7 +165,7 @@ class entity():
                 self.health = 0
                 self.isAlive = False
         def damage(self, amount):
-            self.trueDamage(amount - (randint(3, 4) * self.defence))
+            self.trueDamage(amount / ((randint(3, 4) * self.defence)/100))
         def heal(self, amount):
             self.health += amount
             if self.health > self.maxHealth:
@@ -175,17 +175,21 @@ class entity():
         # effects will take a dictionary eg:
         # {'heath': '10', 'attack': '5'}
         class equipable():
-            def __init__(self, name, type, effects):
+            def __init__(self, name, description, type, effects):
                 self.name = name
+                self.description = description
                 self.type = type
                 self.effects = effects
         class consumable(pygame.sprite.Sprite):
-            def __init__(self, effects):
+            def __init__(self, name, description, effects):
+                self.name = name
+                self.description = description
                 self.effects = effects
         class keyItem(pygame.sprite.Sprite):
-            None
+            def __init__(self, name):
+                self.name = name
 class smallTurtle(entity.playerCharacter):
-    def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initRanged, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+    def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(image)
         pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
@@ -195,7 +199,6 @@ class smallTurtle(entity.playerCharacter):
         self.defence = initdefence
         self.strength = initStrength
         self.magic = initMagic
-        self.ranged = initRanged
         self.level = initLevel
         self.exp = initExp
         self.isAlive = True
@@ -245,6 +248,7 @@ placementcounter = 25
 selection1 = False
 selection2 = False
 party_menu_list = []
+turn = True
 
 images = ['images\\smallTurtle.png','images\\NinjaTurtle.png','images\\WizardTurtle.png','images\\KnightTurtle.png']
 turtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\smallTurtle.png')
@@ -260,17 +264,29 @@ wizardTurtle.rect.y = 350
 knightTurtle.rect.x = 250
 knightTurtle.rect.y = 400
 
-potion = entity.item.consumable(({'health': 10}))
-antiPotion = entity.item.consumable(({'health': -10}))
-strengthPotion = entity.item.consumable(({'strength': 10}))
-antiStrengthPotion = entity.item.consumable(({'strength': -10}))
-multiPotion = entity.item.consumable(({'health': 10, 'attack': 10, 'strength': 10}))
-antiMultiPotion = entity.item.consumable(({'health': -10, 'attack': -10, 'strength': -10}))
+###############
+# CONSUMABLES #
+###############
 
-sword = entity.item.equipable('sword', 'hand', ({'attack': 10}))
-syphonSword = entity.item.equipable('syphonSword', 'hand', ({'attack': 50, 'health': -20}))
-chestplate = entity.item.equipable('chestplate', 'torso', ({'defence': 20}))
-multiBoots = entity.item.equipable('multiBoots', 'feet', ({'attack': 10, 'strength': 10, 'defence': 10}))
+healthPotion = entity.item.consumable('Health Potion', '', ({'health': 10}))
+mediumHealthPotion = entity.item.consumable('Medium Health Potion', '', ({'health': 75}))
+bigHealthPotion = entity.item.consumable('Big Health Potion', '', ({'health': 200}))
+giantHealthPotion = entity.item.consumable('Giant Health Potion', '', ({'health': 9001}))
+
+attackUp = entity.item.consumable('Attack Up', '', ({'attack': 10}))
+strengthUp = entity.item.consumable('Strength Up', '', ({'strength': 10}))
+defenceUp = entity.item.consumable('Defence Up', '', ({'defence': 10}))
+magicUp = entity.item.consumable('Magic Up', '', ({'magic': 10}))
+maxHealthUp = entity.item.consumable('Max Health Up', '', ({'maxHealth': 10}))
+
+expOrb = entity.item.consumable('EXP Orb', '', ({'exp': randint(1, 100)}))
+
+
+###########
+# WEAPONS #
+###########
+
+cardboardSword = ('Cardboard Sword', ({'attack': 1, 'strength': 1}))
 
 partybutton = base_sprite(image="images\\partyButton.png")
 partybutton.rect.x = 0
@@ -398,6 +414,7 @@ while running:
                                     placementcounter = 25
                                     party_menu_list = []
                                     buildPartyMenu()
+                                    turn = False #enemy turn
 
                             else: #none selected
                                 selection1 = sprite[1]
@@ -416,6 +433,9 @@ while running:
         console.draw()
         pygame.display.flip()
         #fight = False
+        if False:
+            fight = False
+            turn = True
 
 
     if randint(0,500) == 0: #mob spawner
@@ -449,6 +469,7 @@ while running:
                         if selection1: #first selected
                             if selection1 == sprite[1]:
                                 selection1 = False
+                                party_list.remove(pointer1)
                             else:
                                 selection2 = sprite[1]
                                 sprite1,sprite2 = backgroundparty.index(selection1), backgroundparty.index(selection2)
@@ -466,9 +487,16 @@ while running:
                                 placementcounter = 25
                                 party_menu_list = []
                                 buildPartyMenu()
+                                party_list.remove(pointer1)
 
                         else: #none selected
                             selection1 = sprite[1]
+                            pointer1 = base_sprite(image = "images\\arrow.png")
+                            pointer1.rect.x = sprite[0].rect.x - 30
+                            pointer1.rect.y = sprite[0].rect.y + 50
+                            party_list.add(pointer1)
+
+
 
     keys = pygame.key.get_pressed()
     if console.active == False:
