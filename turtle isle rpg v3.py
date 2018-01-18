@@ -219,29 +219,29 @@ class entity():
         # effects will take a dictionary eg:
         # {'heath': '10', 'attack': '5'}
         class equipable():
-            def __init__(self, name, description, type, effects):
+            def __init__(self, name, description, type, effects, image):
                 self.name = name
                 self.description = description
                 self.type = type
                 self.effects = effects
                 pygame.sprite.Sprite.__init__(self)
-                self.image = pygame.image.load('images\\sprites\\' + name)
+                self.image = pygame.image.load(image)
                 pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
                 self.rect = self.image.get_rect()
         class consumable(pygame.sprite.Sprite):
-            def __init__(self, name, description, effects):
+            def __init__(self, name, description, effects, image):
                 self.name = name
                 self.description = description
                 self.effects = effects
                 pygame.sprite.Sprite.__init__(self)
-                self.image = pygame.image.load('images\\sprites\\' + name)
+                self.image = pygame.image.load(image)
                 pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
                 self.rect = self.image.get_rect()
         class keyItem(pygame.sprite.Sprite):
-            def __init__(self, name):
+            def __init__(self, name, image):
                 self.name = name
                 pygame.sprite.Sprite.__init__(self)
-                self.image = pygame.image.load('images\\sprites\\' + name)
+                self.image = pygame.image.load(image)
                 pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
                 self.rect = self.image.get_rect()
 class smallTurtle(entity.playerCharacter):
@@ -328,56 +328,56 @@ knightTurtle.rect.y = 400
 # CONSUMABLES #
 ###############
 
-healthPotion = entity.item.consumable('Health Potion', 'A small potion that restores 10 health', ({'health': 10}))
-mediumHealthPotion = entity.item.consumable('Medium Health Potion', 'A potion that is slightly larger than a normal Health Potion that restores 75 health', ({'health': 75}))
-bigHealthPotion = entity.item.consumable('Big Health Potion', 'A potion that is significantly larger than a normal Health Potion that restores 200 health', ({'health': 200}))
-giantHealthPotion = entity.item.consumable('Giant Health Potion', 'A potion that dwarfes a normal Health Potion in comparison that restores an amount of health that is over 9000', ({'health': 9001}))
+healthPotion = entity.item.consumable('Health Potion', 'A small potion that restores 10 health', ({'health': 10}), 'images\\sprites\\healthPotion.png')
+mediumHealthPotion = entity.item.consumable('Medium Health Potion', 'A potion that is slightly larger than a normal Health Potion that restores 75 health', ({'health': 75}),"images\\sprites\\mediumHealthPotion.png")
+bigHealthPotion = entity.item.consumable('Big Health Potion', 'A potion that is significantly larger than a normal Health Potion that restores 200 health', ({'health': 200}), 'images\\sprites\\bigHealthPotion.png')
+giantHealthPotion = entity.item.consumable('Giant Health Potion', 'A potion that dwarfes a normal Health Potion in comparison that restores an amount of health that is over 9000', ({'health': 9001}), 'images\\sprites\\giantHealthPotion.png')
 
-attackUp = entity.item.consumable('Attack Up', 'A small tablet the permanatley increases your attack by 10', ({'attack': 10}))
-strengthUp = entity.item.consumable('Strength Up', 'A small tablet the permanatley increases your strength by 10', ({'strength': 10}))
-defenceUp = entity.item.consumable('Defence Up', 'A small tablet the permanatley increases your defence by 10', ({'defence': 10}))
-magicUp = entity.item.consumable('Magic Up', 'A small tablet the permanatley increases your magic by 10', ({'magic': 10}))
-maxHealthUp = entity.item.consumable('Max Health Up', 'A small tablet the permanatley increases your max health by 10', ({'maxHealth': 10}))
+attackUp = entity.item.consumable('Attack Up', 'A small tablet the permanatley increases your attack by 10', ({'attack': 10}), 'images\\sprites\\attackUp.png')
+strengthUp = entity.item.consumable('Strength Up', 'A small tablet the permanatley increases your strength by 10', ({'strength': 10}),"images\\sprites\\strengthUp.png")
+defenceUp = entity.item.consumable('Defence Up', 'A small tablet the permanatley increases your defence by 10', ({'defence': 10}), 'images\\sprites\\defenceUp.png')
+magicUp = entity.item.consumable('Magic Up', 'A small tablet the permanatley increases your magic by 10', ({'magic': 10}), 'images\\sprites\\magicUp.png')
+maxHealthUp = entity.item.consumable('Max Health Up', 'A small tablet the permanatley increases your max health by 10', ({'maxHealth': 10}),"images\\sprites\\maxHealthUp.png")
 
-expOrb = entity.item.consumable('EXP Orb', 'Test your luck', ({'exp': randint(1, 100)}))
+expOrb = entity.item.consumable('EXP Orb', 'Test your luck', ({'exp': randint(1, 100)}), 'images\\sprites\\expOrb.png')
 
 
 ###########
 # WEAPONS #
 ###########
 
-cardboardSword = entity.item.equipable('Cardboard Sword', 'Don\'t take it out in the rain', 'hand', ({'attack': 1, 'strength': 1}))
-greatSwordOfPatker = entity.item.equipable('Great Sword Of Patker', 'This sword was only rumored of... until now', 'hand', ({'attack': 15, 'strength': 15, 'maxHealth': 25}))
-syphoningSword = entity.item.equipable('Syphoning Sword', 'A sword that draws power from your health', 'hand', ({'attack': 20, 'strength': 10, 'health': -10}))
+cardboardSword = entity.item.equipable('Cardboard Sword', 'Don\'t take it out in the rain', 'hand', ({'attack': 1, 'strength': 1}), 'images\\sprites\\cardboardSword.png')
+greatSwordOfPatker = entity.item.equipable('Great Sword Of Patker', 'This sword was only rumored of... until now', 'hand', ({'attack': 15, 'strength': 15, 'maxHealth': 25}), 'images\\sprites\\greatSwordOfPatker.png')
+syphoningSword = entity.item.equipable('Syphoning Sword', 'A sword that draws power from your health', 'hand', ({'attack': 20, 'strength': 10, 'health': -10}), 'images\\sprites\\syphoningSword.png')
 
-stick = entity.item.equipable('Stick', 'What\'s brown and sticky', 'hand', ({'magic': 1}))
-showerRod = entity.item.equipable('Shower Rod', 'It used to hold up a shower curtain', 'hand', ({'magic': 5}))
-nimRod = entity.item.equipable('Nim Rod', 'Simple mach production', 'hand', ({'magic': 13}))
-lightningRod = entity.item.equipable('Lightning Rod', 'Clever joke about Ben Franklin or something', 'hand', ({'magic': 20}))
+stick = entity.item.equipable('Stick', 'What\'s brown and sticky', 'hand', ({'magic': 1}), 'images\\sprites\\stick.png')
+showerRod = entity.item.equipable('Shower Rod', 'It used to hold up a shower curtain', 'hand', ({'magic': 5}), 'images\\sprites\\showerRod.png')
+nimRod = entity.item.equipable('Nim Rod', 'Simple mach production', 'hand', ({'magic': 13}),"images\\sprites\\nimRod.png")
+lightningRod = entity.item.equipable('Lightning Rod', 'Clever joke about Ben Franklin or something', 'hand', ({'magic': 20}), 'images\\sprites\\lightningRod.png')
 
 ########
 # HEAD #
 ########
 
-helmOfPatker = entity.item.equipable('Helm Of Patker', 'A great helm for a great leader', 'head', ({'defence': 7}))
-bikeHelmet = entity.item.equipable('Bike Helmet', 'If you wear this you won\'t die in a bike crash', 'head', ({'defence': 5}))
+helmOfPatker = entity.item.equipable('Helm Of Patker', 'A great helm for a great leader', 'head', ({'defence': 7}),"images\\sprites\\helmOfPatker.png")
+bikeHelmet = entity.item.equipable('Bike Helmet', 'If you wear this you won\'t die in a bike crash', 'head', ({'defence': 5}), 'images\\sprites\\bikeHelmet.png')
 
 #########
 # TORSO #
 #########
 
-gownsOfPatker = entity.item.equipable('Gowns Of Patker', 'Sacred gowns from the cult of Patker', 'torso', ({'defence': 15}))
-syphoningSigil = entity.item.equipable('Syphoning Sigil', 'It\'s a piece of garlic', 'torso', ({'attack': 5, 'defence': 5, 'health': -3}))
-abSuit = entity.item.equipable('Ab Suit', 'The fake muscles don\'t really do much', 'torso', ({'attack': 2, 'strength': 2, 'defence': 2}))
-bodOfBoasting = entity.item.equipable('Bod Of Boasting', 'Confidence is key', 'torso', ({'attack': 5, 'strength': 5, 'defence': 5, 'magic': 5}))
+gownsOfPatker = entity.item.equipable('Gowns Of Patker', 'Sacred gowns from the cult of Patker', 'torso', ({'defence': 15}),"images\\sprites\\gownsOfPatker.png")
+syphoningSigil = entity.item.equipable('Syphoning Sigil', 'It\'s a piece of garlic', 'torso', ({'attack': 5, 'defence': 5, 'health': -3}), 'images\\sprites\\syphoningSigil.png')
+abSuit = entity.item.equipable('Ab Suit', 'The fake muscles don\'t really do much', 'torso', ({'attack': 2, 'strength': 2, 'defence': 2}), 'images\\sprites\\abSuit.png')
+bodOfBoasting = entity.item.equipable('Bod Of Boasting', 'Confidence is key', 'torso', ({'attack': 5, 'strength': 5, 'defence': 5, 'magic': 5}), 'images\\sprites\\bodOfBoasting.png')
 
 ########
 # FEET #
 ########
 
-sandlesOfPatker = entity.item.equipable('Sandles Of Patker', "They're pretty dumb.", 'feet', ({'defence': 5}))
-crocodilesWithSockodiles = entity.item.equipable('Crocodiles With Sockodiles', 'The cool kids call them crocs with socks', 'feet', ({'defence': 7}))
-stilts = entity.item.equipable('Stilts', 'They leave you more open to attacks', 'feet', ({'defence': -2}))
+sandlesOfPatker = entity.item.equipable('Sandles Of Patker', "They're pretty dumb.", 'feet', ({'defence': 5}), 'images\\sprites\\sandlesOfPatker.png')
+crocodilesWithSockodiles = entity.item.equipable('Crocodiles With Sockodiles', 'The cool kids call them crocs with socks', 'feet', ({'defence': 7}), 'images\\sprites\\crocodilesWithSockodiles.png')
+stilts = entity.item.equipable('Stilts', 'They leave you more open to attacks', 'feet', ({'defence': -2}), 'images\\sprites\\stilts.png')
 
 partybutton = base_sprite(image="images\\partyButton.png")
 partybutton.rect.x = 0
@@ -765,9 +765,10 @@ while running:
         turtle_image.rect.y = 435
         mob_fight.add(turtle_image)
 
-    attackbutton = base_sprite(image = "attackButton.png")
-    runbutton = base_sprite(image = "runButton.png")
-
+    attackbutton = base_sprite(image = "images\\attackButton.png",x=150,y=480)
+    runbutton = base_sprite(image = "images\\runButton.png",x=60,y=480)
+    general_sprites.add(attackbutton)
+    general_sprites.add(runbutton)
 
     screen.blit(game_map,(scrollX*2,0))
     olddirection = direction
