@@ -24,6 +24,7 @@ party = pygame.sprite.Group()
 mobs_list = pygame.sprite.Group()
 mob_fight = pygame.sprite.Group()
 party_list = pygame.sprite.Group()
+general_sprites = pygame.sprite.Group()
 
 
 ###########
@@ -94,12 +95,14 @@ class entity():
             self.exp += amount
             self.checkExp()
             return self.exp
-        def damage(self, amount, type):
+        def trueDamage(self, amount):
             self.health -= int(amount)
             if self.health <= 0:
                 self.health = 0
                 self.isAlive = False
             return self.isAlive
+        def damage(self, amount):
+            self.trueDamage(amount - (randint(3, 4) * self.defence))
         def heal(self, amount):
             self.health += amount
             if self.health > self.maxHealth:
@@ -126,6 +129,14 @@ class entity():
                     exec('self.' + i + ' += ' + str(item.effects[i]))
                 return True
             return False
+        def calcAttackDamage(self):
+            return randint(3,4) * (self.attack * (1.5 * self.strength))
+        def attack(self, character):
+            if type(character).name__ == 'enemyCharacter' or type(character).__name__ == 'playerCharacter':
+                if self.hand == None:
+                    character.damage(self.calcAttackDamage())
+                return True
+            return False
 
 
     class enemyCharacter(pygame.sprite.Sprite):
@@ -148,11 +159,13 @@ class entity():
         def attack(self, entity):
             if randint(0, attack) != 0:
                 entity.damage(self.calcAttackDamage())
-        def damage(self, amount):
+        def trueDamage(self, amount):
             self.health -= amount
             if self.health < 0:
                 self.health = 0
                 self.isAlive = False
+        def damage(self, amount):
+            self.trueDamage(amount - (randint(3, 4) * self.defence))
         def heal(self, amount):
             self.health += amount
             if self.health > self.maxHealth:
@@ -351,19 +364,62 @@ while running:
                 if event.key == pygame.K_F1:
                     console.set_active()
 
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if partybutton.rect.collidepoint(event.pos):
+                    if menubool:
+                        party_list.empty()
+                        menubool = False
+                        placementcounter = 25
+                        party_menu_list = []
+                    else:
+                        buildPartyMenu()
+                        menubool = True
+
+                if len(party_list) > 0:
+                    for sprite in party_menu_list:
+                        if sprite[0].rect.collidepoint(event.pos):
+                            if selection1: #first selected
+                                if selection1 == sprite[1]:
+                                    selection1 = False
+                                else:
+                                    selection2 = sprite[1]
+                                    sprite1,sprite2 = backgroundparty.index(selection1), backgroundparty.index(selection2)
+                                    backgroundparty[sprite1], backgroundparty[sprite2] = backgroundparty[sprite2], backgroundparty[sprite1]
+                                    images[sprite1],images[sprite2] = images[sprite2],images[sprite1]
+                                    backgroundparty[0].rect.x = current_turtle.rect.x
+                                    backgroundparty[0].rect.y = current_turtle.rect.y
+                                    backgroundparty[0].image = pygame.image.load(images[0])
+                                    if direction == "left":
+                                        backgroundparty[0].image = pygame.transform.flip(backgroundparty[0].image,100,0)
+                                    current_turtle = backgroundparty[0]
+                                    selection1 = False
+                                    selection2 = False
+                                    party_list.empty()
+                                    placementcounter = 25
+                                    party_menu_list = []
+                                    buildPartyMenu()
+
+                            else: #none selected
+                                selection1 = sprite[1]
+
         mob_fight.remove(mob_info)
         mob_info = text(f"{active_mob.name}: {active_mob.health}hp","Comic Sans MS",18,(66, 134, 244),active_mob.rect.x+50,active_mob.image.get_rect().size[1]+20,255)
         mob_fight.add(mob_info)
         mob_fight.update()
+        party_list.update()
+        sprites_list.update()
+        general_sprites.update()
         screen.fill(color) #gets rid of all sprites without removing them from groups
         mob_fight.draw(screen)
+        party_list.draw(screen)
+        general_sprites.draw(screen)
         console.draw()
         pygame.display.flip()
         #fight = False
 
 
-    #if randint(0,500) == 0: #mob spawner
-        #spawnmob()
+    if randint(0,500) == 0: #mob spawner
+        spawnmob()
 
     eventlist = pygame.event.get()
     console.process_input(eventlist)
@@ -422,13 +478,13 @@ while running:
             current_turtle.rect.clamp_ip(screen_rect)
             move = True
 
-        elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
             positions.append((current_turtle.rect.x,current_turtle.rect.y))
             current_turtle.move('y', 8)
             current_turtle.rect.clamp_ip(screen_rect)
             move = True
 
-        elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             positions.append((current_turtle.rect.x,current_turtle.rect.y))
             current_turtle.move('x', -8)
             current_turtle.rect.clamp_ip(screen_rect)
@@ -437,7 +493,7 @@ while running:
             if scrollX < 0:
                 scrollX += 8
 
-        elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
             positions.append((current_turtle.rect.x,current_turtle.rect.y))
             current_turtle.move('x', 8)
             current_turtle.rect.clamp_ip(screen_rect)
@@ -473,6 +529,12 @@ while running:
         mob_fight.add(active_mob)
         mob_fight.add(mob_info)
         fight = True
+        if menubool:
+            party_list.empty()
+            menubool = False
+            placementcounter = 25
+            party_menu_list = []
+        general_sprites.add(partybutton)
 
     screen.blit(game_map,(scrollX*2,0))
     olddirection = direction
