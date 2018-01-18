@@ -174,6 +174,21 @@ class entity():
             self.health += amount
             if self.health > self.maxHealth:
                 self.health = self.maxHealth
+        def equip(self, item):
+            if type(item).__name__ == 'equipable':
+                for i in item.effects:
+                    exec('self.' + i + ' += ' + str(item.effects[i]))
+                exec('self.' + item.type + ' = item')
+                return True
+            return False
+        def unequip(self, type):
+            if eval('self.' + type) != None:
+                item = eval('self.' + type)
+                for i in item.effects:
+                    exec('self.' + i + ' -= ' + str(item.effects[i]))
+                exec('self.' + type + ' = None')
+                return item
+            return False
 
     class item():
         # effects will take a dictionary eg:
@@ -223,11 +238,12 @@ class text(pygame.sprite.Sprite): #helpful class for rendering text as a sprite
                 self.rerender(x,y,opacity)
                 self.pos = y
                 self.text = text
+                self.opacity = opacity
         def update(self):
                 pass
         def print_text(self, text_string, x, y):
                 self.render_text = text_string
-                self.rerender(x,y)
+                self.rerender(x,y,self.opacity)
         def rerender(self, x, y, opacity):
                 self.image = self.font.render(self.render_text, 0, self.color)
                 self.image.set_alpha(opacity)
@@ -272,44 +288,56 @@ knightTurtle.rect.y = 400
 # CONSUMABLES #
 ###############
 
-healthPotion = entity.item.consumable('Health Potion', '', ({'health': 10}))
-mediumHealthPotion = entity.item.consumable('Medium Health Potion', '', ({'health': 75}))
-bigHealthPotion = entity.item.consumable('Big Health Potion', '', ({'health': 200}))
-giantHealthPotion = entity.item.consumable('Giant Health Potion', '', ({'health': 9001}))
+healthPotion = entity.item.consumable('Health Potion', 'A small potion that restores 10 health', ({'health': 10}))
+mediumHealthPotion = entity.item.consumable('Medium Health Potion', 'A potion that is slightly larger than a normal Health Potion that restores 75 health', ({'health': 75}))
+bigHealthPotion = entity.item.consumable('Big Health Potion', 'A potion that is significantly larger than a normal Health Potion that restores 200 health', ({'health': 200}))
+giantHealthPotion = entity.item.consumable('Giant Health Potion', 'A potion that dwarfes a normal Health Potion in comparison that restores an amount of health that is over 9000', ({'health': 9001}))
 
-attackUp = entity.item.consumable('Attack Up', '', ({'attack': 10}))
-strengthUp = entity.item.consumable('Strength Up', '', ({'strength': 10}))
-defenceUp = entity.item.consumable('Defence Up', '', ({'defence': 10}))
-magicUp = entity.item.consumable('Magic Up', '', ({'magic': 10}))
-maxHealthUp = entity.item.consumable('Max Health Up', '', ({'maxHealth': 10}))
+attackUp = entity.item.consumable('Attack Up', 'A small tablet the permanatley increases your attack by 10', ({'attack': 10}))
+strengthUp = entity.item.consumable('Strength Up', 'A small tablet the permanatley increases your strength by 10', ({'strength': 10}))
+defenceUp = entity.item.consumable('Defence Up', 'A small tablet the permanatley increases your defence by 10', ({'defence': 10}))
+magicUp = entity.item.consumable('Magic Up', 'A small tablet the permanatley increases your magic by 10', ({'magic': 10}))
+maxHealthUp = entity.item.consumable('Max Health Up', 'A small tablet the permanatley increases your max health by 10', ({'maxHealth': 10}))
 
-expOrb = entity.item.consumable('EXP Orb', '', ({'exp': randint(1, 100)}))
+expOrb = entity.item.consumable('EXP Orb', 'Test your luck', ({'exp': randint(1, 100)}))
 
 
 ###########
 # WEAPONS #
 ###########
 
-cardboardSword = ('Cardboard Sword', '', ({'attack': 1, 'strength': 1}))
-greatSwordOfPatker = ('Great Sword Of Patker', 'This sword was only rumored of... until now', ({'attack': 15, 'strength': 15, 'maxHealth': 25}))
+cardboardSword = entity.item.equipable('Cardboard Sword', 'Don\'t take it out in the rain', 'hand', ({'attack': 1, 'strength': 1}))
+greatSwordOfPatker = entity.item.equipable('Great Sword Of Patker', 'This sword was only rumored of... until now', 'hand', ({'attack': 15, 'strength': 15, 'maxHealth': 25}))
+syphoningSword = entity.item.equipable('Syphoning Sword', 'A sword that draws power from your health', 'hand', ({'attack': 20, 'strength': 10, 'health': -10}))
+
+stick = entity.item.equipable('Stick', 'What\'s brown and sticky', 'hand', ({'magic': 1}))
+showerRod = entity.item.equipable('Shower Rod', 'It used to hold up a shower curtain', 'hand', ({'magic': 5}))
+nimRod = entity.item.equipable('Nim Rod', 'Simple mach production', 'hand', ({'magic': 13}))
+lightningRod = entity.item.equipable('Lightning Rod', 'Clever joke about Ben Franklin or something', 'hand', ({'magic': 20}))
 
 ########
 # HEAD #
 ########
 
-helmOfPatker = ('Helm Of Patker', 'A great helm for a great leader', ({'defence': 7}))
+helmOfPatker = entity.item.equipable('Helm Of Patker', 'A great helm for a great leader', 'head', ({'defence': 7}))
+bikeHelmet = entity.item.equipable('Bike Helmet', 'If you wear this you won\'t die in a bike crash', 'head', ({'defence': 5}))
 
 #########
 # TORSO #
 #########
 
-gownsOfPatker = ('Gowns Of Patker', 'Sacred gowns from the cult of Patker', ({'defence': 15}))
+gownsOfPatker = entity.item.equipable('Gowns Of Patker', 'Sacred gowns from the cult of Patker', 'torso', ({'defence': 15}))
+syphoningSigil = entity.item.equipable('Syphoning Sigil', 'It\'s a piece of garlic', 'torso', ({'attack': 5, 'defence': 5, 'health': -3}))
+abSuit = entity.item.equipable('Ab Suit', 'The fake muscles don\'t really do much', 'torso', ({'attack': 2, 'strength': 2, 'defence': 2}))
+bodOfBoasting = entity.item.equipable('Bod Of Boasting', 'Confidence is key', 'torso', ({'attack': 5, 'strength': 5, 'defence': 5, 'magic': 5}))
 
 ########
 # FEET #
 ########
 
-sandlesOfPatker = ('Sandles Of Patker', 'They\'re pretty dumb.', ({'defence': 5}))
+sandlesOfPatker = entity.item.equipable('Sandles Of Patker', "They're pretty dumb.", 'feet', ({'defence': 5}))
+crocodilesWithSockodiles = entity.item.equipable('Crocodiles With Sockodiles', 'The cool kids call them crocs with socks', 'feet', ({'defence': 7}))
+stilts = entity.item.equipable('Stilts', 'They leave you more open to attacks', 'feet', ({'defence': -2}))
 
 partybutton = base_sprite(image="images\\partyButton.png")
 partybutton.rect.x = 0
@@ -378,23 +406,18 @@ backgroundparty.append(knightTurtle)
 #pygame.key.set_repeat(10,10)
 
 def spawnmob():
-    patker = entity.enemyCharacter('Patker', 20, 5, 5, 5, 0, , 20, True, None, None, None, None)
-    ultraPatker = entity.enemyCharacter('Ultra Patker', 200, 50, 50, 50, 25, 15, 200, True, helmOfPatker, gownsOfPatker, sandlesOfPatker, greatSwordOfPatker)
+    patker = entity.enemyCharacter('Patker', 20, 5, 5, 5, 0, 1, 20, True, None, None, None, None, 'images\\patker.png')
+    ultraPatker = entity.enemyCharacter('Ultra Patker', 200, 50, 50, 50, 25, 15, 200, True, helmOfPatker, gownsOfPatker, sandlesOfPatker, greatSwordOfPatker, 'images\\ultraPatker.png')
     mobs = [
         patker,
         ultraPatker
     ]
-    mobs = {
 
-        "patker":[20,]
-    } #get health of mob
-
-    spawnedmob = choice(list(mobs))
+    spawnedmob = choice(mobs)
     #mob = mob_class(image=f"images\\{spawnedmob}.png",health=mobs.get(spawnedmob),name=spawnedmob)
-
-    mob.rect.x = randint(50,900)
-    mob.rect.y = randint(50,400)
-    mobs_list.add(mob)
+    spawnedmob.rect.x = randint(50,900)
+    spawnedmob.rect.y = randint(50,400)
+    mobs_list.add(spawnedmob)
 
 while running:
     party.empty()
@@ -422,37 +445,52 @@ while running:
                         buildPartyMenu()
                         menubool = True
 
-                if len(party_list) > 0:
-                    for sprite in party_menu_list:
-                        if sprite[0].rect.collidepoint(event.pos):
-                            if selection1: #first selected
-                                if selection1 == sprite[1]:
-                                    selection1 = False
-                                else:
-                                    selection2 = sprite[1]
-                                    sprite1,sprite2 = backgroundparty.index(selection1), backgroundparty.index(selection2)
-                                    backgroundparty[sprite1], backgroundparty[sprite2] = backgroundparty[sprite2], backgroundparty[sprite1]
-                                    images[sprite1],images[sprite2] = images[sprite2],images[sprite1]
-                                    backgroundparty[0].rect.x = current_turtle.rect.x
-                                    backgroundparty[0].rect.y = current_turtle.rect.y
-                                    backgroundparty[0].image = pygame.image.load(images[0])
-                                    if direction == "left":
-                                        backgroundparty[0].image = pygame.transform.flip(backgroundparty[0].image,100,0)
-                                    current_turtle = backgroundparty[0]
-                                    selection1 = False
-                                    selection2 = False
-                                    party_list.empty()
-                                    placementcounter = 25
-                                    party_menu_list = []
-                                    buildPartyMenu()
-                                    turn = False #enemy turn
+                if turn:
+                    if len(party_list) > 0:
+                        for sprite in party_menu_list:
+                            if sprite[0].rect.collidepoint(event.pos):
+                                if selection1: #first selected
+                                    if selection1 == sprite[1]:
+                                        selection1 = False
+                                        party_list.remove(pointer1)
+                                    else:
+                                        selection2 = sprite[1]
+                                        sprite1,sprite2 = backgroundparty.index(selection1), backgroundparty.index(selection2)
+                                        backgroundparty[sprite1], backgroundparty[sprite2] = backgroundparty[sprite2], backgroundparty[sprite1]
+                                        images[sprite1],images[sprite2] = images[sprite2],images[sprite1]
+                                        backgroundparty[0].rect.x = current_turtle.rect.x
+                                        backgroundparty[0].rect.y = current_turtle.rect.y
+                                        backgroundparty[0].image = pygame.image.load(images[0])
+                                        if direction == "left":
+                                            backgroundparty[0].image = pygame.transform.flip(backgroundparty[0].image,100,0)
+                                        current_turtle = backgroundparty[0]
+                                        selection1 = False
+                                        selection2 = False
+                                        party_list.empty()
+                                        placementcounter = 25
+                                        party_menu_list = []
+                                        buildPartyMenu()
+                                        turn = False #enemy turn
+                                        party_list.remove(pointer1)
 
-                            else: #none selected
-                                selection1 = sprite[1]
+                                else: #none selected
+                                    selection1 = sprite[1]
+                                    pointer1 = base_sprite(image = "images\\arrow.png")
+                                    pointer1.rect.x = sprite[0].rect.x - 30
+                                    pointer1.rect.y = sprite[0].rect.y + 50
+                                    party_list.add(pointer1)
 
         mob_fight.remove(mob_info)
-        mob_info = text(f"{active_mob.name}: {active_mob.health}hp","Comic Sans MS",18,(66, 134, 244),active_mob.rect.x+50,active_mob.image.get_rect().size[1]+20,255)
+        mob_fight.remove(turntext)
+        if turn:
+            turntext = text("Your turn","Comic Sans MS",30,(66,134,244),200,5,255)
+        else:
+            turntext = text(f"{active_mob.name}'s turn","Comic Sans MS", 30, (66,134,244), 200, 5, 255)
+        #turntext.print_text("niet",turntext.rect.x,turntext.rect.y) #change text
+        mob_info = text(f"{active_mob.name}: {active_mob.health}hp","Comic Sans MS",18,(66, 134, 244),0,active_mob.image.get_rect().size[1]+20,255)
+        mob_info.rect.x = 1000 - mob_info.rect[2] - 10
         mob_fight.add(mob_info)
+        mob_fight.add(turntext)
         mob_fight.update()
         party_list.update()
         sprites_list.update()
@@ -584,8 +622,15 @@ while running:
         active_mob.image = pygame.transform.rotozoom(active_mob.image,0,2.75)
         active_mob.rect.x = 1000 - active_mob.image.get_rect().size[0]
         active_mob.rect.y = 0
-        mob_info = text(f"{active_mob.name}: {active_mob.health}hp","Comic Sans MS",18,(66, 134, 244),active_mob.rect.x+50,active_mob.image.get_rect().size[1]+20,255)
+        if active_mob.name == "Patker":
+            if randint(0,1) == 0:
+                console.output('it has stilts')
+                active_mob.equip(stilts)
+        turntext = text("Your turn","Comic Sans MS",30,(66,134,244),200,5,255)
+        mob_info = text(f"{active_mob.name}: {active_mob.health}hp","Comic Sans MS",18,(66, 134, 244),0,active_mob.image.get_rect().size[1]+20,255)
+        mob_info.rect.x = 1000 - mob_info.rect[2] - 10
         mob_fight.add(active_mob)
+        mob_fight.add(turntext)
         mob_fight.add(mob_info)
         fight = True
         if menubool:
