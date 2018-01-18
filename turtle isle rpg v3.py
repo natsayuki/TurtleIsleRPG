@@ -141,7 +141,11 @@ class entity():
 
 
     class enemyCharacter(pygame.sprite.Sprite):
-        def __init__(self, name, health, attack, defence, strength, magic, level, maxHealth, isAlive, head, torso, feet, hand):
+        def __init__(self, name, health, attack, defence, strength, magic, level, maxHealth, isAlive, head, torso, feet, hand, image):
+            pygame.sprite.Sprite.__init__(self)
+            self.image = pygame.image.load(image)
+            pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
+            self.rect = self.image.get_rect()
             self.health = health
             self.attack = attack
             self.defence = defence
@@ -155,7 +159,7 @@ class entity():
             self.hand = hand
             self.name = name
         def calcAttackDamage(self):
-            return self.stregth*(.5*self.attack)
+            return randint(3,4) * (self.attack * (1.5 * self.strength))
         def attack(self, entity):
             if randint(0, attack) != 0:
                 entity.damage(self.calcAttackDamage())
@@ -286,7 +290,26 @@ expOrb = entity.item.consumable('EXP Orb', '', ({'exp': randint(1, 100)}))
 # WEAPONS #
 ###########
 
-cardboardSword = ('Cardboard Sword', ({'attack': 1, 'strength': 1}))
+cardboardSword = ('Cardboard Sword', '', ({'attack': 1, 'strength': 1}))
+greatSwordOfPatker = ('Great Sword Of Patker', 'This sword was only rumored of... until now', ({'attack': 15, 'strength': 15, 'maxHealth': 25}))
+
+########
+# HEAD #
+########
+
+helmOfPatker = ('Helm Of Patker', 'A great helm for a great leader', ({'defence': 7}))
+
+#########
+# TORSO #
+#########
+
+gownsOfPatker = ('Gowns Of Patker', 'Sacred gowns from the cult of Patker', ({'defence': 15}))
+
+########
+# FEET #
+########
+
+sandlesOfPatker = ('Sandles Of Patker', 'They\'re pretty dumb.', ({'defence': 5}))
 
 partybutton = base_sprite(image="images\\partyButton.png")
 partybutton.rect.x = 0
@@ -355,12 +378,20 @@ backgroundparty.append(knightTurtle)
 #pygame.key.set_repeat(10,10)
 
 def spawnmob():
+    patker = entity.enemyCharacter('Patker', 20, 5, 5, 5, 0, , 20, True, None, None, None, None)
+    ultraPatker = entity.enemyCharacter('Ultra Patker', 200, 50, 50, 50, 25, 15, 200, True, helmOfPatker, gownsOfPatker, sandlesOfPatker, greatSwordOfPatker)
+    mobs = [
+        patker,
+        ultraPatker
+    ]
     mobs = {
-        "patker":20
+
+        "patker":[20,]
     } #get health of mob
 
     spawnedmob = choice(list(mobs))
-    mob = mob_class(image=f"images\\{spawnedmob}.png",health=mobs.get(spawnedmob),name=spawnedmob)
+    #mob = mob_class(image=f"images\\{spawnedmob}.png",health=mobs.get(spawnedmob),name=spawnedmob)
+
     mob.rect.x = randint(50,900)
     mob.rect.y = randint(50,400)
     mobs_list.add(mob)
