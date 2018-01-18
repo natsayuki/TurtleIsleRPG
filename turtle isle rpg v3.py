@@ -4,6 +4,7 @@ from time import sleep,time
 from random import randint,uniform,choice
 import PyCon
 from Functions import *
+from string import *
 
 ########
 # init #
@@ -32,7 +33,7 @@ general_sprites = pygame.sprite.Group()
 # classes #
 ###########
 class base_sprite(pygame.sprite.Sprite): #turtle spawned in middle of screen
-        def __init__(self, color=(0,0,0), width=0, height=0, image=None,health=100):
+        def __init__(self, color=(0,0,0), width=0, height=0, image=None,health=100,x=0,y=0):
             pygame.sprite.Sprite.__init__(self)
             if "Surface" in type(image).__name__:
                 self.image = image
@@ -41,6 +42,8 @@ class base_sprite(pygame.sprite.Sprite): #turtle spawned in middle of screen
             pygame.draw.rect(self.image, color, [5000000,5000000,width,height])
             self.rect = self.image.get_rect()
             self.health = health
+            self.rect.x = x
+            self.rect.y = y
 
 
 
@@ -221,14 +224,26 @@ class entity():
                 self.description = description
                 self.type = type
                 self.effects = effects
+                pygame.sprite.Sprite.__init__(self)
+                self.image = pygame.image.load('images\\sprites\\' + name)
+                pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
+                self.rect = self.image.get_rect()
         class consumable(pygame.sprite.Sprite):
             def __init__(self, name, description, effects):
                 self.name = name
                 self.description = description
                 self.effects = effects
+                pygame.sprite.Sprite.__init__(self)
+                self.image = pygame.image.load('images\\sprites\\' + name)
+                pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
+                self.rect = self.image.get_rect()
         class keyItem(pygame.sprite.Sprite):
             def __init__(self, name):
                 self.name = name
+                pygame.sprite.Sprite.__init__(self)
+                self.image = pygame.image.load('images\\sprites\\' + name)
+                pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
+                self.rect = self.image.get_rect()
 class smallTurtle(entity.playerCharacter):
     def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
         pygame.sprite.Sprite.__init__(self)
@@ -292,6 +307,8 @@ selection2 = False
 party_menu_list = []
 turn = True
 statsbool = False
+temp_list = []
+
 
 images = ['images\\smallTurtle.png','images\\NinjaTurtle.png','images\\WizardTurtle.png','images\\KnightTurtle.png']
 turtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\smallTurtle.png')
@@ -421,16 +438,30 @@ def buildStatMenu():
     stat_menu = base_sprite(image = "images\\partyMenu.png")
     stat_menu.rect.x = 0
     stat_menu.rect.y = 500
-    selfTemp = ''
+
+    mob_fight.add(stat_menu)
+
     active_self = active_mob.listSelf()
+    temp = 530
     for i in active_self:
-        selfTemp += f'{i}: {active_self[i]} '
-    mob_self = text(selfTemp,"Comic Sans MS",18,(66, 134, 244),10,550,255)
+        baz = text(i.title() + ': ' + str(active_self[i]), 'Comic Sans MS', 18, (66, 134, 244), 10, temp, 255)
+        mob_fight.add(baz)
+        temp_list.append(baz)
+        temp += 20
+
+    active_stats = active_mob.listStats()
+    temp = 520
+    for i in active_stats:
+        baz = text(i.title() + ': ' + str(active_stats[i]), 'Comic Sans MS', 18, (66, 134, 244), 400, temp, 255)
+        mob_fight.add(baz)
+        temp_list.append(baz)
+        temp += 20
+
+
     # mob_self = text(f"{active_mob.head.name} on head, {active_mob.torso.name} on torso, {active_mob.feet.name} on feet, {active_mob}","Comic Sans MS",18,(66, 134, 244),0,active_mob.image.get_rect().size[1]+20,255)
     # mob_stats = text(f"{active_mob.name}: {active_mob.health}hp","Comic Sans MS",18,(66, 134, 244),0,active_mob.image.get_rect().size[1]+20,255)
 
-    mob_fight.add(stat_menu)
-    mob_fight.add(mob_self)
+
 
 party.add(turtle)
 backgroundparty.append(turtle)
@@ -481,18 +512,35 @@ while running:
                         placementcounter = 25
                         party_menu_list = []
                     else:
-                        buildPartyMenu()
-                        menubool = True
+                        if statsbool:
+                            for sprite in temp_list:
+                                mob_fight.remove(sprite)
+                            mob_fight.remove(stat_menu)
+                            statsbool = False
+                            temp_list = []
+                        else:
+                            buildPartyMenu()
+                            menubool = True
+
+
 
                 if statsbutton.rect.collidepoint(event.pos):
                     if statsbool:
-                        mob_fight.remove(mob_self)
+                        for sprite in temp_list:
+                            mob_fight.remove(sprite)
                         mob_fight.remove(stat_menu)
                         statsbool = False
+                        temp_list = []
 
                     else:
-                        buildStatMenu()
-                        statsbool = True
+                        if menubool:
+                            party_list.empty()
+                            menubool = False
+                            placementcounter = 25
+                            party_menu_list = []
+                        else:
+                            buildStatMenu()
+                            statsbool = True
 
                 if turn:
                     if len(party_list) > 0:
@@ -529,7 +577,15 @@ while running:
                                     pointer1.rect.y = sprite[0].rect.y + 50
                                     party_list.add(pointer1)
 
+        mob_fight.remove(turtle_image)
 
+        turtle_image = base_sprite(image=current_turtle.image)
+        if direction == "left":
+            turtle_image.image = pygame.transform.flip(turtle_image.image,100,0)
+        turtle_image.image = pygame.transform.rotozoom(turtle_image.image,0,1.5)
+        turtle_image.rect.x = 60
+        turtle_image.rect.y = 370
+        mob_fight.add(turtle_image)
 
         mob_fight.remove(mob_info)
         mob_fight.remove(turntext)
@@ -701,6 +757,17 @@ while running:
         statsbutton.rect.x = 0
         statsbutton.rect.y = 50
         general_sprites.add(statsbutton)
+        turtle_image = base_sprite(image=current_turtle.image)
+        if direction == "left":
+            turtle_image.image = pygame.transform.flip(turtle_image.image,100,0)
+        turtle_image.image = pygame.transform.rotozoom(turtle_image.image,0,1.5)
+        turtle_image.rect.x = 60
+        turtle_image.rect.y = 435
+        mob_fight.add(turtle_image)
+
+    attackbutton = base_sprite(image = "attackButton.png")
+    runbutton = base_sprite(image = "runButton.png")
+
 
     screen.blit(game_map,(scrollX*2,0))
     olddirection = direction

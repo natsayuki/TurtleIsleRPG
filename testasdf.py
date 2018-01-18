@@ -44,10 +44,13 @@ class pygame_utils():
     class menu():
         def __init__(self, x, y, width, height,color):
             self.rect = pygame.rect.Rect((x,y,width,height))
-            pygame.draw.rect(screen,color,self.rect)
             self.text_group = []
+            self.color = color
             self.rect.x = self.rect.left
             self.rect.y = self.rect.top
+
+        def draw(self):
+            pygame.draw.rect(screen,self.color,self.rect)
         def addText(self, text, x, y, color, background):
             text_sprite = self.font.render(text, 0, color, background)
             text_sprite.rect = text.get_rect()
@@ -83,8 +86,8 @@ while running:
             if test_button_text.rect.collidepoint(event.pos):
                 pass
 
-    #sprites_list.update()
+    sprites_list.update()
     screen.fill((255,255,255))
-    #sprites_list.draw(screen)
-    test_menu.draw(screen)
+    sprites_list.draw(screen)
+    test_menu.draw()
     pygame.display.flip()
