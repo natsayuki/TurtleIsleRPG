@@ -138,6 +138,18 @@ class entity():
                     character.damage(self.calcAttackDamage())
                 return True
             return False
+        def listSelf(self):
+            temp = {}
+            for i in ['head', 'torso', 'feet', 'hand']:
+                try:
+                    temp[i] = eval('self.' + i + '.name')
+                except:
+                    temp[i] = eval('self.' + i)
+            return temp
+        def listStats(self):
+            return {'health': self.health, 'attack': self.attack, 'strength': self.strength, 'defence': self.defence, 'magic': self.magic}
+        def listLevel(self):
+            return {'level': self.level, 'exp': self.exp}
 
 
     class enemyCharacter(pygame.sprite.Sprite):
@@ -189,6 +201,16 @@ class entity():
                 exec('self.' + type + ' = None')
                 return item
             return False
+        def listSelf(self):
+            temp = {}
+            for i in ['head', 'torso', 'feet', 'hand']:
+                try:
+                    temp[i] = eval('self.' + i + '.name')
+                except:
+                    temp[i] = eval('self.' + i)
+            return temp
+        def listStats(self):
+            return {'health': self.health, 'attack': self.attack, 'strength': self.strength, 'defence': self.defence, 'magic': self.magic}
 
     class item():
         # effects will take a dictionary eg:
@@ -269,6 +291,7 @@ selection1 = False
 selection2 = False
 party_menu_list = []
 turn = True
+statsbool = False
 
 images = ['images\\smallTurtle.png','images\\NinjaTurtle.png','images\\WizardTurtle.png','images\\KnightTurtle.png']
 turtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\smallTurtle.png')
@@ -392,6 +415,22 @@ def buildPartyMenu():
         party_list.add(texthealth)
         party_menu_list.append((image,i))
 
+def buildStatMenu():
+    global stat_menu
+    global mob_self
+    stat_menu = base_sprite(image = "images\\partyMenu.png")
+    stat_menu.rect.x = 0
+    stat_menu.rect.y = 500
+    selfTemp = ''
+    active_self = active_mob.listSelf()
+    for i in active_self:
+        selfTemp += f'{i}: {active_self[i]} '
+    mob_self = text(selfTemp,"Comic Sans MS",18,(66, 134, 244),10,550,255)
+    # mob_self = text(f"{active_mob.head.name} on head, {active_mob.torso.name} on torso, {active_mob.feet.name} on feet, {active_mob}","Comic Sans MS",18,(66, 134, 244),0,active_mob.image.get_rect().size[1]+20,255)
+    # mob_stats = text(f"{active_mob.name}: {active_mob.health}hp","Comic Sans MS",18,(66, 134, 244),0,active_mob.image.get_rect().size[1]+20,255)
+
+    mob_fight.add(stat_menu)
+    mob_fight.add(mob_self)
 
 party.add(turtle)
 backgroundparty.append(turtle)
@@ -407,7 +446,7 @@ backgroundparty.append(knightTurtle)
 
 def spawnmob():
     patker = entity.enemyCharacter('Patker', 20, 5, 5, 5, 0, 1, 20, True, None, None, None, None, 'images\\patker.png')
-    ultraPatker = entity.enemyCharacter('Ultra Patker', 200, 50, 50, 50, 25, 15, 200, True, helmOfPatker, gownsOfPatker, sandlesOfPatker, greatSwordOfPatker, 'images\\ultraPatker.png')
+    ultraPatker = entity.enemyCharacter('Ultra Patker', 200, 50, 50, 50, 25, 15, 200, True, None, None, None, None, 'images\\ultraPatker.png')
     mobs = [
         patker,
         ultraPatker
@@ -445,6 +484,16 @@ while running:
                         buildPartyMenu()
                         menubool = True
 
+                if statsbutton.rect.collidepoint(event.pos):
+                    if statsbool:
+                        mob_fight.remove(mob_self)
+                        mob_fight.remove(stat_menu)
+                        statsbool = False
+
+                    else:
+                        buildStatMenu()
+                        statsbool = True
+
                 if turn:
                     if len(party_list) > 0:
                         for sprite in party_menu_list:
@@ -479,6 +528,8 @@ while running:
                                     pointer1.rect.x = sprite[0].rect.x - 30
                                     pointer1.rect.y = sprite[0].rect.y + 50
                                     party_list.add(pointer1)
+
+
 
         mob_fight.remove(mob_info)
         mob_fight.remove(turntext)
@@ -626,8 +677,14 @@ while running:
             if randint(0,1) == 0:
                 console.output('it has stilts')
                 active_mob.equip(stilts)
+        elif active_mob.name == 'Ultra Patker':
+            active_mob.equip(helmOfPatker)
+            active_mob.equip(gownsOfPatker)
+            active_mob.equip(sandlesOfPatker)
+            active_mob.equip(greatSwordOfPatker)
         turntext = text("Your turn","Comic Sans MS",30,(66,134,244),200,5,255)
         mob_info = text(f"{active_mob.name}: {active_mob.health}hp","Comic Sans MS",18,(66, 134, 244),0,active_mob.image.get_rect().size[1]+20,255)
+
         mob_info.rect.x = 1000 - mob_info.rect[2] - 10
         mob_fight.add(active_mob)
         mob_fight.add(turntext)
@@ -639,6 +696,11 @@ while running:
             placementcounter = 25
             party_menu_list = []
         general_sprites.add(partybutton)
+
+        statsbutton = base_sprite(image = "images\\statsButton.png")
+        statsbutton.rect.x = 0
+        statsbutton.rect.y = 50
+        general_sprites.add(statsbutton)
 
     screen.blit(game_map,(scrollX*2,0))
     olddirection = direction
