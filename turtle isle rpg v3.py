@@ -27,6 +27,7 @@ mobs_list = pygame.sprite.Group()
 mob_fight = pygame.sprite.Group()
 party_list = pygame.sprite.Group()
 general_sprites = pygame.sprite.Group()
+attack_menu = pygame.sprite.Group()
 
 
 ###########
@@ -65,7 +66,7 @@ class mob_class(pygame.sprite.Sprite): #turtle spawned in middle of screen
 class entity():
 
     class playerCharacter(pygame.sprite.Sprite):
-        def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initmagic, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+        def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initmagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
             pygame.sprite.Sprite.__init__(self)
             self.image = pygame.image.load(image)
             pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
@@ -76,6 +77,7 @@ class entity():
             self.strength = initStrength
             self.magic = initMagic
             self.magic = initmagic
+            self.speed = initSpeed
             self.level = initLevel
             self.exp = initExp
             self.isAlive = True
@@ -134,11 +136,10 @@ class entity():
                 return True
             return False
         def calcAttackDamage(self):
-            return randint(3,4) * (self.attack * (1.5 * self.strength))
-        def attack(self, character):
-            if type(character).name__ == 'enemyCharacter' or type(character).__name__ == 'playerCharacter':
-                if self.hand == None:
-                    character.damage(self.calcAttackDamage())
+            return randint(self.strength, self.strength+int((.5*self.attack)))
+        def Attack(self, character):
+            if type(character).__name__ == 'enemyCharacter' or type(character).__name__ == 'playerCharacter':
+                character.damage(self.calcAttackDamage())
                 return True
             return False
         def listSelf(self):
@@ -150,13 +151,13 @@ class entity():
                     temp[i] = eval('self.' + i)
             return temp
         def listStats(self):
-            return {'health': self.health, 'attack': self.attack, 'strength': self.strength, 'defence': self.defence, 'magic': self.magic}
+                return {'health': self.health, 'attack': self.attack, 'strength': self.strength, 'defence': self.defence, 'magic': self.magic, 'speed': self.speed}
         def listLevel(self):
             return {'level': self.level, 'exp': self.exp}
 
 
     class enemyCharacter(pygame.sprite.Sprite):
-        def __init__(self, name, health, attack, defence, strength, magic, level, maxHealth, isAlive, head, torso, feet, hand, image):
+        def __init__(self, name, health, attack, defence, strength, magic, speed, level, maxHealth, isAlive, head, torso, feet, hand, image):
             pygame.sprite.Sprite.__init__(self)
             self.image = pygame.image.load(image)
             pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
@@ -166,16 +167,18 @@ class entity():
             self.defence = defence
             self.strength = strength
             self.magic = magic
+            self.speed = speed
             self.level = level
             self.maxHealth = maxHealth
+            self.isAlive = isAlive
             self.head = head
             self.torso = torso
             self.feet = feet
             self.hand = hand
             self.name = name
         def calcAttackDamage(self):
-            return randint(3,4) * (self.attack * (1.5 * self.strength))
-        def attack(self, entity):
+            return randint(self.strength, self.strength+int((.5*self.attack)))
+        def Attack(self, entity):
             if randint(0, attack) != 0:
                 entity.damage(self.calcAttackDamage())
         def trueDamage(self, amount):
@@ -213,7 +216,7 @@ class entity():
                     temp[i] = eval('self.' + i)
             return temp
         def listStats(self):
-            return {'health': self.health, 'attack': self.attack, 'strength': self.strength, 'defence': self.defence, 'magic': self.magic}
+            return {'health': self.health, 'attack': self.attack, 'strength': self.strength, 'defence': self.defence, 'magic': self.magic, 'speed': self.speed}
 
     class item():
         # effects will take a dictionary eg:
@@ -245,7 +248,7 @@ class entity():
                 pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
                 self.rect = self.image.get_rect()
 class smallTurtle(entity.playerCharacter):
-    def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+    def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(image)
         pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
@@ -255,6 +258,7 @@ class smallTurtle(entity.playerCharacter):
         self.defence = initdefence
         self.strength = initStrength
         self.magic = initMagic
+        self.speed = initSpeed
         self.level = initLevel
         self.exp = initExp
         self.isAlive = True
@@ -263,34 +267,44 @@ class smallTurtle(entity.playerCharacter):
         self.torso = torso
         self.feet = feet
         self.hand = hand
+        self.abilities = {'Bite': self.bite, 'Splash': self.splash, 'Heal': self.heal, 'Ogre Smash': self.ogreSmash}
+    def bite(self, character):
+        character.trueDamage(2*self.attack)
+    def splash(self, character):
+        character.trueDamage(0)
+    def heal(self, character):
+        character.heal(10)
+    def ogreSmash(self, character):
+        character.damage(self.attack*9001)
 
 
 
 class text(pygame.sprite.Sprite): #helpful class for rendering text as a sprite
-        def __init__(self, text, font_path, font_size, font_colour, x, y, opacity):
+        def __init__(self, text, font_path, font_size, font_colour, x, y, opacity,background=None):
                 pygame.sprite.Sprite.__init__(self)
                 self.font = pygame.font.SysFont(font_path, font_size)
                 self.color = font_colour
                 self.render_text = text
-                self.rerender(x,y,opacity)
+                self.rerender(x,y,opacity,background)
                 self.pos = y
                 self.text = text
                 self.opacity = opacity
+                self.background = background
         def update(self):
                 pass
         def print_text(self, text_string, x, y):
                 self.render_text = text_string
-                self.rerender(x,y,self.opacity)
-        def rerender(self, x, y, opacity):
-                self.image = self.font.render(self.render_text, 0, self.color)
+                self.rerender(x,y,self.opacity,self.background)
+        def rerender(self, x, y, opacity,background):
+                self.image = self.font.render(self.render_text, 0, self.color,background)
                 self.image.set_alpha(opacity)
                 self.rect = self.image.get_rect()
                 self.rect.x = x
                 self.rect.y = y
 
-########################
+##############
 # predefined variables #
-########################
+##############
 running = True
 positions = []
 move = False
@@ -305,16 +319,19 @@ placementcounter = 25
 selection1 = False
 selection2 = False
 party_menu_list = []
+attack_menu_list = []
 turn = True
 statsbool = False
 temp_list = []
+fightover = False
+attack_active = False
 
 
 images = ['images\\smallTurtle.png','images\\NinjaTurtle.png','images\\WizardTurtle.png','images\\KnightTurtle.png']
-turtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\smallTurtle.png')
-ninjaTurtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\NinjaTurtle.png')
-wizardTurtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\WizardTurtle.png')
-knightTurtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\KnightTurtle.png')
+turtle = smallTurtle(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\smallTurtle.png')
+ninjaTurtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\NinjaTurtle.png')
+wizardTurtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\WizardTurtle.png')
+knightTurtle = entity.playerCharacter(50, 50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\KnightTurtle.png')
 turtle.rect.x = 250
 turtle.rect.y = 250
 ninjaTurtle.rect.x = 250
@@ -324,9 +341,9 @@ wizardTurtle.rect.y = 350
 knightTurtle.rect.x = 250
 knightTurtle.rect.y = 400
 
-###############
+############
 # CONSUMABLES #
-###############
+############
 
 healthPotion = entity.item.consumable('Health Potion', 'A small potion that restores 10 health', ({'health': 10}), 'images\\sprites\\healthPotion.png')
 mediumHealthPotion = entity.item.consumable('Medium Health Potion', 'A potion that is slightly larger than a normal Health Potion that restores 75 health', ({'health': 75}),"images\\sprites\\mediumHealthPotion.png")
@@ -450,7 +467,7 @@ def buildStatMenu():
         temp += 20
 
     active_stats = active_mob.listStats()
-    temp = 520
+    temp = 510
     for i in active_stats:
         baz = text(i.title() + ': ' + str(active_stats[i]), 'Comic Sans MS', 18, (66, 134, 244), 400, temp, 255)
         mob_fight.add(baz)
@@ -458,9 +475,22 @@ def buildStatMenu():
         temp += 20
 
 
-    # mob_self = text(f"{active_mob.head.name} on head, {active_mob.torso.name} on torso, {active_mob.feet.name} on feet, {active_mob}","Comic Sans MS",18,(66, 134, 244),0,active_mob.image.get_rect().size[1]+20,255)
-    # mob_stats = text(f"{active_mob.name}: {active_mob.health}hp","Comic Sans MS",18,(66, 134, 244),0,active_mob.image.get_rect().size[1]+20,255)
-
+def buildAttackMenu():
+    attack_menu_box = base_sprite(image="images\\attackMenu2.png",x=30,y=505)
+    attack_menu.add(attack_menu_box)
+    counterx = 45
+    countery = 515
+    for enum,ability in enumerate(current_turtle.abilities,1):
+        abilitytext = text(ability,"Comic Sans MS",18, (66,134,244),counterx,countery,255)
+        counterx += abilitytext.image.get_rect().size[0]+30
+        if enum % 2 == 0:
+            countery += 35
+            counterx = 45
+        attack_menu.add(abilitytext)
+        attack_menu_list.append(abilitytext)
+    cancelbutton = text("Cancel","Comic Sans MS",13,(255,0,0),75,580,255)
+    attack_menu.add(cancelbutton)
+    attack_menu_list.append(cancelbutton)
 
 
 party.add(turtle)
@@ -476,11 +506,13 @@ backgroundparty.append(knightTurtle)
 #pygame.key.set_repeat(10,10)
 
 def spawnmob():
-    patker = entity.enemyCharacter('Patker', 20, 5, 5, 5, 0, 1, 20, True, None, None, None, None, 'images\\patker.png')
-    ultraPatker = entity.enemyCharacter('Ultra Patker', 200, 50, 50, 50, 25, 15, 200, True, None, None, None, None, 'images\\ultraPatker.png')
+    patker = entity.enemyCharacter('Patker', 20, 5, 5, 5, 0, 50, 1, 20, True, None, None, None, None, 'images\\patker.png')
+    ultraPatker = entity.enemyCharacter('Ultra Patker', 200, 50, 50, 50, 25, 50, 15, 200, True, None, None, None, None, 'images\\ultraPatker.png')
+    gersoxl = entity.enemyCharacter('Gersoxl', 1, 2, 3, 4, 5, 50,  6, 7, True, None, None, None, None, 'images\\gersoxl.png')
     mobs = [
         patker,
-        ultraPatker
+        ultraPatker,
+        gersoxl
     ]
 
     spawnedmob = choice(mobs)
@@ -493,6 +525,10 @@ while running:
     party.empty()
     party.add(current_turtle)
     while fight: #fight part
+
+        if active_mob.isAlive == False:
+            fightover = True
+
         eventlist = pygame.event.get()
         console.process_input(eventlist)
         pygame.display.flip()
@@ -506,25 +542,6 @@ while running:
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if partybutton.rect.collidepoint(event.pos):
-                    if menubool:
-                        party_list.empty()
-                        menubool = False
-                        placementcounter = 25
-                        party_menu_list = []
-                    else:
-                        if statsbool:
-                            for sprite in temp_list:
-                                mob_fight.remove(sprite)
-                            mob_fight.remove(stat_menu)
-                            statsbool = False
-                            temp_list = []
-                        else:
-                            buildPartyMenu()
-                            menubool = True
-
-
-
-                if statsbutton.rect.collidepoint(event.pos):
                     if statsbool:
                         for sprite in temp_list:
                             mob_fight.remove(sprite)
@@ -532,17 +549,57 @@ while running:
                         statsbool = False
                         temp_list = []
 
+                    if menubool:
+                        party_list.empty()
+                        menubool = False
+                        placementcounter = 25
+                        party_menu_list = []
+
                     else:
-                        if menubool:
-                            party_list.empty()
-                            menubool = False
-                            placementcounter = 25
-                            party_menu_list = []
-                        else:
-                            buildStatMenu()
-                            statsbool = True
+                        buildPartyMenu()
+                        menubool = True
+
+
+
+                if statsbutton.rect.collidepoint(event.pos):
+                    if menubool:
+                        party_list.empty()
+                        menubool = False
+                        placementcounter = 25
+                        party_menu_list = []
+
+                    if statsbool:
+                        for sprite in temp_list:
+                            mob_fight.remove(sprite)
+                        mob_fight.remove(stat_menu)
+                        statsbool = False
+                        temp_list = []
+
+
+                    else:
+                        buildStatMenu()
+                        statsbool = True
+
+
 
                 if turn:
+                    if runbutton.rect.collidepoint(event.pos):
+                        #todo when speed added have it calculate if you run. if fail turn = False
+                        fightover = True
+
+                    if attackbutton.rect.collidepoint(event.pos):
+                        if attack_active:
+                            attack_active = False
+                            attack_menu.empty()
+
+
+                        else: #build menu
+                            buildAttackMenu()
+
+
+                            #current_turtle.Attack(active_mob)
+                            turn = False
+
                     if len(party_list) > 0:
                         for sprite in party_menu_list:
                             if sprite[0].rect.collidepoint(event.pos):
@@ -602,16 +659,22 @@ while running:
         party_list.update()
         sprites_list.update()
         general_sprites.update()
+        attack_menu.update()
         screen.fill(color) #gets rid of all sprites without removing them from groups
+        general_sprites.draw(screen)
+        attack_menu.draw(screen)
         mob_fight.draw(screen)
         party_list.draw(screen)
-        general_sprites.draw(screen)
         console.draw()
         pygame.display.flip()
         #fight = False
-        if False:
+        if fightover:
+            mob_fight.empty()
+            general_sprites.empty()
+            fightover = False
             fight = False
             turn = True
+            attack_active = False
 
 
     if randint(0,500) == 0: #mob spawner
@@ -745,6 +808,13 @@ while running:
         mob_fight.add(active_mob)
         mob_fight.add(turntext)
         mob_fight.add(mob_info)
+
+        attackbutton = base_sprite(image = "images\\attackButton.png",x=135,y=505)
+        runbutton = base_sprite(image = "images\\runButton.png",x=30,y=505)
+        general_sprites.add(attackbutton)
+        general_sprites.add(runbutton)
+
+
         fight = True
         if menubool:
             party_list.empty()
@@ -765,10 +835,7 @@ while running:
         turtle_image.rect.y = 435
         mob_fight.add(turtle_image)
 
-    attackbutton = base_sprite(image = "images\\attackButton.png",x=150,y=480)
-    runbutton = base_sprite(image = "images\\runButton.png",x=60,y=480)
-    general_sprites.add(attackbutton)
-    general_sprites.add(runbutton)
+
 
     screen.blit(game_map,(scrollX*2,0))
     olddirection = direction
