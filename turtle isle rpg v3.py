@@ -132,7 +132,7 @@ class entity():
             self.checkExp()
             return self.exp
         def trueDamage(self, amount):
-            self.health -= int(amount)
+            self.health -= ceil(amount)
             if self.health <= 0:
                 self.health = 0
                 self.isAlive = False
@@ -235,7 +235,7 @@ class entity():
             if randint(0, self.attack) != 0:
                 entity.damage(self.calcAttackDamage())
         def trueDamage(self, amount):
-            self.health -= int(amount)
+            self.health -= ceil(amount)
             if self.health < 0:
                 self.health = 0
                 self.isAlive = False
@@ -335,24 +335,21 @@ class smallTurtle(entity.playerCharacter):
         return self.Attack(character)
     def bite(self, character, name = 'Bite'):
         if (self.abilities[name])[2] == 0:
-            character.trueDamage(2*self.attack)
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            return character.trueDamage(2*self.attack)
         return False
     def splash(self, character, name = 'Splash'):
         if (self.abilities[name])[2] == 0:
-            character.trueDamage(0)
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            return character.trueDamage(0)
         return False
     def selfHeal(self, character, name = 'Self Heal'):
         if (self.abilities[name])[2] == 0:
-            self.heal(25)
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            return self.heal(25)
         return False
 
 class ninjaTurtle(entity.playerCharacter):
@@ -385,29 +382,27 @@ class ninjaTurtle(entity.playerCharacter):
             if (self.abilities[i])[2] < 0:
                 (self.abilities[i])[2] = 0
     def basicAttack(self, character):
-        self.Attack(character)
         self.tickDown()
+        return self.Attack(character)
     def superSneakyStrike(self, character, name = 'Super Sneaky Strike'):
         if (self.abilities[name])[2] == 0:
-            character.trueDamage(self.calcAttackDamage())
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            return character.trueDamage(self.calcAttackDamage())
         return False
     def ninjaStar(self, character, name = 'Ninja Star'):
         if (self.abilities[name])[2] == 0:
-            if randint(1, 2) == 1:
-                character.damage(1.5*self.calcAttackDamage())
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            if randint(1, 2) == 1:
+                return character.damage(1.5*self.calcAttackDamage())
+            return character.trueDamage(0)
         return False
     def ogreSmash(self, character, name = 'Ogre Smash'):
         if (self.abilities[name])[2] == 0:
-            character.damage(self.attack*9001)
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            return character.damage(self.attack*9001)
         return False
 
 class wizardTurtle(entity.playerCharacter):
@@ -440,31 +435,28 @@ class wizardTurtle(entity.playerCharacter):
             if (self.abilities[i])[2] < 0:
                 (self.abilities[i])[2] = 0
     def basicAttack(self, character):
-        self.Attack(character)
         self.tickDown()
+        return self.Attack(character)
     def attackSpell(self, character, name = 'Attack Spell'):
         if (self.abilities[name])[2] == 0:
-            character.damage(self.attack + self.magic)
-            character.inflictEffect('burned')
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            character.inflictEffect('burned')
+            return character.damage(self.attack + self.magic)
         return False
     def strengthSpell(self, character, name = 'Strength Spell'):
         if (self.abilities[name])[2] == 0:
-            character.damage(self.strength + self.magic)
-            character.inflictEffect('frozen')
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            character.inflictEffect('frozen')
+            return character.damage(self.strength + self.magic)
         return False
     def defenceSpell(self, character, name = 'Defence Spell'):
         if (self.abilities[name])[2] == 0:
-            character.damage(self.defence + self.magic)
-            character.inflictEffect('confused')
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            character.inflictEffect('confused')
+            return character.damage(self.defence + self.magic)
         return False
 
 class knightTurtle(entity.playerCharacter):
@@ -497,30 +489,27 @@ class knightTurtle(entity.playerCharacter):
             if (self.abilities[i])[2] < 0:
                 (self.abilities[i])[2] = 0
     def basicAttack(self, character):
-        self.Attack(character)
         self.tickDown()
+        return self.Attack(character)
     def hitWithSword(self, character, name = 'Hit With Sword'):
         if (self.abilities[name])[2] == 0:
-            character.trueDamage(self.attack*2)
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            return character.trueDamage(self.attack*2)
         return False
     def charge(self, character, name = 'Charge'):
         if (self.abilities[name])[2] == 0:
-            character.damage(self.strength * 3)
             self.trueDamage(int(.5*self.strength))
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            return character.damage(self.strength * 3)
         return False
     def holySmite(self, character, name = 'Holy Smite'):
         if (self.abilities[name])[2] == 0:
-            character.damage(self.magic * 2)
             self.heal(self.magic)
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return True
+            return character.damage(self.magic * 2)
         return False
 
 class text(pygame.sprite.Sprite): #helpful class for rendering text as a sprite
