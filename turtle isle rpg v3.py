@@ -5,8 +5,9 @@ from random import randint,uniform,choice
 import PyCon
 from Functions import *
 from string import *
-from math import *
+from math import ceil,floor
 from textwrap import wrap,fill
+from PIL import Image
 
 ########
 # init #
@@ -31,6 +32,7 @@ party_list = pygame.sprite.Group()
 general_sprites = pygame.sprite.Group()
 attack_menu = pygame.sprite.Group()
 turnalert_list = pygame.sprite.Group()
+equipment_list = pygame.sprite.Group()
 
 ###########
 # classes #
@@ -68,11 +70,12 @@ class mob_class(pygame.sprite.Sprite): #turtle spawned in middle of screen
 class entity():
 
     class playerCharacter(pygame.sprite.Sprite):
-        def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initmagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+        def __init__(self, name, initHealth, initAttack, initdefence, initStrength, initMagic, initmagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
             pygame.sprite.Sprite.__init__(self)
             self.image = pygame.image.load(image)
             pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
             self.rect = self.image.get_rect()
+            self.name = name
             self.health = initHealth
             self.attack = initAttack
             self.defence = initdefence
@@ -90,7 +93,15 @@ class entity():
             self.hand = hand
             self.effects = {'burned': [False, [4, 8], 0], 'frozen': [False, [2, 4], 0], 'confused': [False, [6, 10], 0]}
             self.levelTree = {'attack': 1, 'defence': 1, 'strength': 1, 'magic': 1, 'speed': 1, 'maxHealth': 1}
-
+            self.tempBuffs = {'attack': 0, 'defence': 0, 'strength': 0, 'magic': 0, 'speed': 1, 'maxHealth': 0}
+        def buff(self, stat, amount):
+            exec('self.' + stat + ' += ' + str(amount))
+            self.tempBuffs[stat] += amount
+            return [stat, amount]
+        def handleBuffs(self):
+            for i in self.tempBuffs:
+                exec('self.' + i + ' -= ' + self.tempBuffs[i])
+                self.tempBuffs[i] = 0
         def inflictEffect(self, effect):
             for i in self.effects:
                 (self.effects[i])[0] = False
@@ -98,7 +109,6 @@ class entity():
             effect[0] = True
             effect[2] = randint((effect[1])[0], (effect[1])[1])
         def handleEffects(self):
-            global turn
             for effect in self.effects:
                 effectList = self.effects[effect]
                 if effectList[0]:
@@ -106,13 +116,17 @@ class entity():
                     if effectList[2] <= 0:
                         effectList[0] = False
                     if effect == 'burned':
-                        self.trueDamage(ceil(self.maxHealth * (5/100)))
+                        burndamage = ceil(self.maxHealth * (5/100))
+                        self.trueDamage(burndamage)
+                        return [False, f'Your turtle has taken {burndamage} damage from burn']
                     elif effect == 'frozen':
-                        turn = not turn
+                        return [True, 'Your turtle is frozen']
                     elif effect == 'confused':
                         if randint(1, 2) == 1:
-                            self.trueDamage(15)
-                            turn = not turn
+                            self.trueDamage(15) # TODO change fixed damage here
+                            return [True, 'Your turtle has damged itself for 15 from confusion']
+
+            return [False]
 
         def move(self, diri, amount):
             exec('self.rect.' + diri + ' += ' + str(amount))
@@ -136,9 +150,9 @@ class entity():
             if self.health <= 0:
                 self.health = 0
                 self.isAlive = False
-            return self.isAlive
+            return ceil(amount)
         def damage(self, amount):
-            self.trueDamage(amount / ((randint(3, 4) * self.defence)/100))
+            return self.trueDamage(amount / ((randint(3, 4) * self.defence)/100))
         def heal(self, amount):
             self.health += amount
             if self.health > self.maxHealth:
@@ -161,9 +175,16 @@ class entity():
             return False
         def consume(self, item):
             if type(item).__name__ == 'consumable':
-                for index, i in enumerate(item.effects, 0):
-                    exec('self.' + i + ' += ' + str(item.effects[i]))
-                return True
+                if item.effects[0] == 'perm':
+                    for index, i in enumerate(item.effects[1], 0):
+                        exec('self.' + i + ' += ' + str(item.effects[i]))
+                    return True
+                elif item.effects[0] == 'temp':
+                    if fight:
+                        for i in item.effects[1]:
+                            return self.buff(i, item.effects[i])
+                    else:
+                        return False
             return False
         def calcAttackDamage(self):
             return randint(self.strength, self.strength+int((.5*self.attack)))
@@ -206,6 +227,14 @@ class entity():
             self.hand = hand
             self.name = name
             self.effects = {'burned': [False, [4, 8], 0], 'frozen': [False, [2, 4], 0], 'confused': [False, [6, 10], 0]}
+            self.tempBuffs = {'attack': 0, 'defence': 0, 'strength': 0, 'magic': 0, 'speed': 1, 'maxHealth': 0}
+        def buff(self, stat, amount):
+            exec('self.' + stat + ' += ' + str(amount))
+            self.tempBuffs[stat] += amount
+        def handleBuffs(self):
+            for i in self.tempBuffs:
+                exec('self.' + i + ' -= ' + self.tempBuffs[i])
+                self.tempBuffs[i] = 0
         def inflictEffect(self, effect):
             for i in self.effects:
                 (self.effects[i])[0] = False
@@ -213,7 +242,6 @@ class entity():
             effect[0] = True
             effect[2] = randint((effect[1])[0], (effect[1])[1])
         def handleEffects(self):
-            global turn
             for effect in self.effects:
                 effectList = self.effects[effect]
                 if effectList[0]:
@@ -221,22 +249,27 @@ class entity():
                     if effectList[2] <= 0:
                         effectList[0] = False
                     if effect == 'burned':
-                        self.trueDamage(ceil(self.maxHealth * (5/100)))
+                        burndamage = ceil(self.maxHealth * (5/100))
+                        self.trueDamage(burndamage)
+                        return [False, f'{self.name} has taken {burndamage} damage from burn']
                     elif effect == 'frozen':
-                        turn = not turn
+                        return [True, f'{self.name} is frozen']
                     elif effect == 'confused':
                         if randint(1, 2) == 1:
-                            self.trueDamage(15)
-                            turn = not turn
+                            self.trueDamage(15) # TODO change fixed damage here
+                            return [True, f'{self.name} has damged itself for 15 from confusion']
+
+            return [False]
 
         def calcAttackDamage(self):
             return randint(self.strength, self.strength+int((.5*self.attack)))
         def Attack(self, entity):
             if randint(0, self.attack) != 0:
-                entity.damage(self.calcAttackDamage())
+                return [[entity.damage(self.calcAttackDamage()), 'player', 'damaged', None]]
+            return [[0, 'player', 'damaged', None]]
         def trueDamage(self, amount):
             self.health -= ceil(amount)
-            if self.health < 0:
+            if self.health <= 0:
                 self.health = 0
                 self.isAlive = False
             return ceil(amount)
@@ -302,11 +335,12 @@ class entity():
                 pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
                 self.rect = self.image.get_rect()
 class smallTurtle(entity.playerCharacter):
-    def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+    def __init__(self, name, initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(image)
         pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
         self.rect = self.image.get_rect()
+        self.name = name
         self.health = initHealth
         self.attack = initAttack
         self.defence = initdefence
@@ -321,9 +355,10 @@ class smallTurtle(entity.playerCharacter):
         self.torso = torso
         self.feet = feet
         self.hand = hand
-        self.abilities = {'basic attack': [self.basicAttack, 0, 0], 'Bite': [self.bite, 3, 0], 'Splash': [self.splash, 9001, 0], 'Self Heal': [self.selfHeal, 3, 0]}
+        self.abilities = {'Basic Attack': [self.basicAttack, 0, 0], 'Bite': [self.bite, 3, 0], 'Splash': [self.splash, 9001, 0], 'Self Heal': [self.selfHeal, 3, 0]}
         self.effects = {'burned': [False, [4, 8], 0], 'frozen': [False, [2, 4], 0], 'confused': [False, [6, 10], 0]}
         self.levelTree = {'attack': 2, 'defence': 2, 'strength': 2, 'magic': 2, 'speed': 2, 'maxHealth': 2}
+        self.tempBuffs = {'attack': 0, 'defence': 0, 'strength': 0, 'magic': 0, 'speed': 1, 'maxHealth': 0}
 
     def tickDown(self):
         for i in self.abilities:
@@ -332,32 +367,39 @@ class smallTurtle(entity.playerCharacter):
                 (self.abilities[i])[2] = 0
     def basicAttack(self, character):
         self.tickDown()
-        return self.Attack(character)
+        return [[self.Attack(character), 'enemy', 'damaged', None]]
     def bite(self, character, name = 'Bite'):
         if (self.abilities[name])[2] == 0:
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return character.trueDamage(2*self.attack)
+            return [[character.trueDamage(2*self.attack), 'enemy', 'damaged', None]]
         return False
     def splash(self, character, name = 'Splash'):
         if (self.abilities[name])[2] == 0:
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return character.trueDamage(0)
+            return [[character.trueDamage(0), 'enemy', 'damaged', None]]
         return False
     def selfHeal(self, character, name = 'Self Heal'):
         if (self.abilities[name])[2] == 0:
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return self.heal(25)
+            return [[self.heal(25), 'self', 'healed', None]]
+        return False
+    def shellTuck(self, character, name = 'Shell Tuck'):
+        if (self.abilities[name])[2] == 0:
+            self.tickDown()
+            (self.abilities[name])[2] = (self.abilities[name])[1]
+            return [[self.buff('defence', 10), 'self', 'buffed', None]]
         return False
 
 class ninjaTurtle(entity.playerCharacter):
-    def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+    def __init__(self, name, initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(image)
         pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
         self.rect = self.image.get_rect()
+        self.name = name
         self.health = initHealth
         self.attack = initAttack
         self.defence = initdefence
@@ -372,9 +414,10 @@ class ninjaTurtle(entity.playerCharacter):
         self.torso = torso
         self.feet = feet
         self.hand = hand
-        self.abilities = {'basic attack': [self.basicAttack, 0, 0], 'Super Sneaky Strike': [self.superSneakyStrike, 5, 0], 'Ninja Star': [self.ninjaStar, 5, 0], 'Ogre Smash': [self.ogreSmash, 0, 0]}
+        self.abilities = {'Basic Attack': [self.basicAttack, 0, 0], 'Super Sneaky Strike': [self.superSneakyStrike, 5, 0], 'Ninja Star': [self.ninjaStar, 5, 0], 'Ogre Smash': [self.ogreSmash, 0, 0]}
         self.effects = {'burned': [False, [4, 8], 0], 'frozen': [False, [2, 4], 0], 'confused': [False, [6, 10], 0]}
         self.levelTree = {'attack': 1, 'defence': .2, 'strength': .5, 'magic': .1, 'speed': 1, 'maxHealth': .4}
+        self.tempBuffs = {'attack': 0, 'defence': 0, 'strength': 0, 'magic': 0, 'speed': 1, 'maxHealth': 0}
 
     def tickDown(self):
         for i in self.abilities:
@@ -383,34 +426,41 @@ class ninjaTurtle(entity.playerCharacter):
                 (self.abilities[i])[2] = 0
     def basicAttack(self, character):
         self.tickDown()
-        return self.Attack(character)
+        return [[self.Attack(character), 'enemy', 'damaged', None]]
     def superSneakyStrike(self, character, name = 'Super Sneaky Strike'):
         if (self.abilities[name])[2] == 0:
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return character.trueDamage(self.calcAttackDamage())
+            return [[character.trueDamage(self.calcAttackDamage()), 'enemy', 'damaged', None]]
         return False
     def ninjaStar(self, character, name = 'Ninja Star'):
         if (self.abilities[name])[2] == 0:
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
             if randint(1, 2) == 1:
-                return character.damage(1.5*self.calcAttackDamage())
-            return character.trueDamage(0)
+                return [[character.damage(1.5*self.calcAttackDamage()), 'enemy', 'damaged', None]]
+            return [[character.trueDamage(0), 'enemy', 'damaged', None]]
         return False
     def ogreSmash(self, character, name = 'Ogre Smash'):
         if (self.abilities[name])[2] == 0:
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return character.damage(self.attack*9001)
+            return [[character.damage(self.attack*9001), 'enemy', 'damaged', None]]
+        return False
+    def switcheroo(self, character, name = 'Switcheroo'):
+        if (self.abilities[name])[2] == 0:
+            self.tickDown()
+            (self.abilities[name])[2] = (self.abilities[name])[1]
+            return [[self.buff('defence', acitve_mob.defence - self.defence), 'self', 'buffed', None], [active_mob.buff('defence', -(acitve_mob.defence - self.defence)), 'enemy', 'debuffed', None]]
         return False
 
 class wizardTurtle(entity.playerCharacter):
-    def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+    def __init__(self, name, initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(image)
         pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
         self.rect = self.image.get_rect()
+        self.name = name
         self.health = initHealth
         self.attack = initAttack
         self.defence = initdefence
@@ -425,9 +475,10 @@ class wizardTurtle(entity.playerCharacter):
         self.torso = torso
         self.feet = feet
         self.hand = hand
-        self.abilities = {'basic attack': [self.basicAttack, 0, 0], 'Attack Spell': [self.attackSpell, 1, 0], 'Strength Spell': [self.strengthSpell, 1, 0], 'Defence Spell': [self.defenceSpell, 1, 0]}
+        self.abilities = {'Basic Attack': [self.basicAttack, 0, 0], 'Attack Spell': [self.attackSpell, 1, 0], 'Strength Spell': [self.strengthSpell, 1, 0], 'Defence Spell': [self.defenceSpell, 1, 0]}
         self.effects = {'burned': [False, [4, 8], 0], 'frozen': [False, [2, 4], 0], 'confused': [False, [6, 10], 0]}
         self.levelTree = {'attack': .1, 'defence': .3, 'strength': .1, 'magic': 3, 'speed': .4, 'maxHealth': .5}
+        self.tempBuffs = {'attack': 0, 'defence': 0, 'strength': 0, 'magic': 0, 'speed': 1, 'maxHealth': 0}
 
     def tickDown(self):
         for i in self.abilities:
@@ -436,35 +487,41 @@ class wizardTurtle(entity.playerCharacter):
                 (self.abilities[i])[2] = 0
     def basicAttack(self, character):
         self.tickDown()
-        return self.Attack(character)
+        return [[self.Attack(character), 'enemy', 'damaged', None]]
     def attackSpell(self, character, name = 'Attack Spell'):
         if (self.abilities[name])[2] == 0:
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
             character.inflictEffect('burned')
-            return character.damage(self.attack + self.magic)
+            return [[character.damage(self.attack + self.magic), 'enemy', 'damaged', 'burned']]
         return False
     def strengthSpell(self, character, name = 'Strength Spell'):
         if (self.abilities[name])[2] == 0:
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
             character.inflictEffect('frozen')
-            return character.damage(self.strength + self.magic)
+            return [[character.damage(self.strength + self.magic), 'enemy', 'damaged', 'frozen']]
         return False
     def defenceSpell(self, character, name = 'Defence Spell'):
         if (self.abilities[name])[2] == 0:
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
             character.inflictEffect('confused')
-            return character.damage(self.defence + self.magic)
+            return [[character.damage(self.defence + self.magic), 'enemy', 'damaged', 'confused']]
         return False
+    def mysteryForce(self, character, name = 'Mystery Force'):
+        if (self.abilities[name])[2] == 0:
+            self.tickDown()
+            (self.abilities[name])[2] = (self.abilities[name])[1]
+            return [[self.buff('magic', ceil(self.magic/15)), 'self', 'buffed', None]]
 
 class knightTurtle(entity.playerCharacter):
-    def __init__(self, initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
+    def __init__(self, name,  initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(image)
         pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
         self.rect = self.image.get_rect()
+        self.name = name
         self.health = initHealth
         self.attack = initAttack
         self.defence = initdefence
@@ -479,9 +536,10 @@ class knightTurtle(entity.playerCharacter):
         self.torso = torso
         self.feet = feet
         self.hand = hand
-        self.abilities = {'basic attack': [self.basicAttack, 0, 0], 'Hit With Sword': [self.hitWithSword, 5, 0], 'Charge': [self.charge, 10, 0], 'Holy Smite': [self.holySmite, 15, 0]}
+        self.abilities = {'Basic Attack': [self.basicAttack, 0, 0], 'Hit With Sword': [self.hitWithSword, 5, 0], 'Charge': [self.charge, 10, 0], 'Holy Smite': [self.holySmite, 15, 0]}
         self.effects = {'burned': [False, [4, 8], 0], 'frozen': [False, [2, 4], 0], 'confused': [False, [6, 10], 0]}
         self.levelTree = {'attack': .4, 'defence': .4, 'strength': .4, 'magic': .1, 'speed': .2, 'maxHealth': .3}
+        self.tempBuffs = {'attack': 0, 'defence': 0, 'strength': 0, 'magic': 0, 'speed': 1, 'maxHealth': 0}
 
     def tickDown(self):
         for i in self.abilities:
@@ -490,26 +548,24 @@ class knightTurtle(entity.playerCharacter):
                 (self.abilities[i])[2] = 0
     def basicAttack(self, character):
         self.tickDown()
-        return self.Attack(character)
+        return [[self.Attack(character), 'enemy', 'damaged', None]]
     def hitWithSword(self, character, name = 'Hit With Sword'):
         if (self.abilities[name])[2] == 0:
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return character.trueDamage(self.attack*2)
+            return [[character.trueDamage(self.attack*2), 'enemy', 'damaged', None]]
         return False
     def charge(self, character, name = 'Charge'):
         if (self.abilities[name])[2] == 0:
-            self.trueDamage(int(.5*self.strength))
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return character.damage(self.strength * 3)
+            return [[character.damage(self.strength * 3), 'enemy', 'damaged', None], [self.damage(ceil(.5*self.strength)), 'self', 'damaged', None]]
         return False
     def holySmite(self, character, name = 'Holy Smite'):
         if (self.abilities[name])[2] == 0:
-            self.heal(self.magic)
             self.tickDown()
             (self.abilities[name])[2] = (self.abilities[name])[1]
-            return character.damage(self.magic * 2)
+            return [[character.damage(self.magic * 2), 'enemy', 'damaged', None], [self.heal(self.magic), 'self', 'healed', None]]
         return False
 
 class text(pygame.sprite.Sprite): #helpful class for rendering text as a sprite
@@ -547,6 +603,7 @@ olddirection = "right"
 fight = False
 active_mob = None
 menubool = False
+equipmentbool = False
 scrollX = 0
 backgroundparty = []
 placementcounter = 25
@@ -560,13 +617,16 @@ temp_list = []
 fightover = False
 attack_active = False
 turnalert = False
+passturn = False
 
+
+#     def __init__(self, name,  initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
 
 images = ['images\\smallTurtle.png','images\\NinjaTurtle.png','images\\WizardTurtle.png','images\\KnightTurtle.png']
-turtle = smallTurtle(500, 5, 5, 5, 5, 20, 1, 0, 500, None, None, None, None, image='images\\smallTurtle.png')
-ninjaTurtle = ninjaTurtle(50, 50, 50, 50, 50, 50,  1, 0, 50, None, None, None, None, image='images\\NinjaTurtle.png')
-wizardTurtle = wizardTurtle(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\WizardTurtle.png')
-knightTurtle = knightTurtle(50, 50, 50, 50, 50, 50, 1, 0, 50, None, None, None, None, image='images\\KnightTurtle.png')
+turtle = smallTurtle('Turtle', 50000, 5, 5, 5, 5, 20, 1, 0, 50000, None, None, None, None, image='images\\smallTurtle.png')
+ninjaTurtle = ninjaTurtle('Ninja Turtle', 30, 15, 15, 2, 2, 15,  1, 0, 30, None, None, None, None, image='images\\NinjaTurtle.png')
+wizardTurtle = wizardTurtle('Wizard Turtle', 45, 5, 10, 5, 30, 20, 1, 0, 45, None, None, None, None, image='images\\WizardTurtle.png')
+knightTurtle = knightTurtle('Knight Turtle', 50, 10, 5, 15, 5, 3, 1, 0, 50, None, None, None, None, image='images\\KnightTurtle.png')
 turtle.rect.x = 250
 turtle.rect.y = 250
 ninjaTurtle.rect.x = 250
@@ -580,19 +640,20 @@ knightTurtle.rect.y = 400
 # CONSUMABLES #
 ############
 
-healthPotion = entity.item.consumable('Health Potion', 'A small potion that restores 10 health', ({'health': 10}), 'images\\sprites\\healthPotion.png')
-mediumHealthPotion = entity.item.consumable('Medium Health Potion', 'A potion that is slightly larger than a normal Health Potion that restores 75 health', ({'health': 75}),"images\\sprites\\mediumHealthPotion.png")
-bigHealthPotion = entity.item.consumable('Big Health Potion', 'A potion that is significantly larger than a normal Health Potion that restores 200 health', ({'health': 200}), 'images\\sprites\\bigHealthPotion.png')
-giantHealthPotion = entity.item.consumable('Giant Health Potion', 'A potion that dwarfes a normal Health Potion in comparison that restores an amount of health that is over 9000', ({'health': 9001}), 'images\\sprites\\giantHealthPotion.png')
+healthPotion = entity.item.consumable('Health Potion', 'A small potion that restores 10 health', ['perm', {'health': 10}], 'images\\sprites\\healthPotion.png')
+mediumHealthPotion = entity.item.consumable('Medium Health Potion', 'A potion that is slightly larger than a normal Health Potion that restores 75 health', ['perm', {'health': 75}],"images\\sprites\\mediumHealthPotion.png")
+bigHealthPotion = entity.item.consumable('Big Health Potion', 'A potion that is significantly larger than a normal Health Potion that restores 200 health', ['perm', {'health': 200}], 'images\\sprites\\bigHealthPotion.png')
+giantHealthPotion = entity.item.consumable('Giant Health Potion', 'A potion that dwarfes a normal Health Potion in comparison that restores an amount of health that is over 9000', ['perm', {'health': 9001}], 'images\\sprites\\giantHealthPotion.png')
 
-attackUp = entity.item.consumable('Attack Up', 'A small tablet the permanatley increases your attack by 10', ({'attack': 10}), 'images\\sprites\\attackUp.png')
-strengthUp = entity.item.consumable('Strength Up', 'A small tablet the permanatley increases your strength by 10', ({'strength': 10}),"images\\sprites\\strengthUp.png")
-defenceUp = entity.item.consumable('Defence Up', 'A small tablet the permanatley increases your defence by 10', ({'defence': 10}), 'images\\sprites\\defenceUp.png')
-magicUp = entity.item.consumable('Magic Up', 'A small tablet the permanatley increases your magic by 10', ({'magic': 10}), 'images\\sprites\\magicUp.png')
-maxHealthUp = entity.item.consumable('Max Health Up', 'A small tablet the permanatley increases your max health by 10', ({'maxHealth': 10}),"images\\sprites\\maxHealthUp.png")
+attackUp = entity.item.consumable('Attack Up', 'A small tablet the permanatley increases your attack by 10', ['perm', {'attack': 10}], 'images\\sprites\\attackUp.png')
+strengthUp = entity.item.consumable('Strength Up', 'A small tablet the permanatley increases your strength by 10', ['perm', {'strength': 10}],"images\\sprites\\strengthUp.png")
+defenceUp = entity.item.consumable('Defence Up', 'A small tablet the permanatley increases your defence by 10', ['perm', {'defence': 10}], 'images\\sprites\\defenceUp.png')
+magicUp = entity.item.consumable('Magic Up', 'A small tablet the permanatley increases your magic by 10', ['perm', {'magic': 10}], 'images\\sprites\\magicUp.png')
+maxHealthUp = entity.item.consumable('Max Health Up', 'A small tablet the permanatley increases your max health by 10', ['perm', {'maxHealth': 10}],"images\\sprites\\maxHealthUp.png")
 
-expOrb = entity.item.consumable('EXP Orb', 'Test your luck', ({'exp': randint(1, 100)}), 'images\\sprites\\expOrb.png')
+expOrb = entity.item.consumable('EXP Orb', 'Test your luck', ['perm', {'exp': randint(1, 100)}], 'images\\sprites\\expOrb.png')
 
+attackBoost = entity.item.consumable('Attack Boost', 'Temporarily boost your attack in a fight', ['temp', {'attack': 25}], 'images\\sprites\\attackUp.png')
 
 ###########
 # WEAPONS #
@@ -636,6 +697,10 @@ partybutton.rect.x = 0
 partybutton.rect.y = 0
 sprites_list.add(partybutton)
 
+equipmentbutton = base_sprite(image="images\\equipmentButton.png")
+equipmentbutton.rect.x = 0
+equipmentbutton.rect.y = 50
+sprites_list.add(equipmentbutton)
 
 def evaluate(arg):
     """executes code"""
@@ -666,6 +731,17 @@ def listEquipMob():
 def listStatsMob():
     return active_mob.listStats()
 
+def foobar(effect):
+    try:
+        if effect == "f":
+            active_mob.inflictEffect("frozen")
+        elif effect == "b":
+            active_mob.inflictEffect("burned")
+        elif effect == "c":
+            active_mob.inflictEffect("confused")
+    except Exception as e:
+        print(e)
+
 console = PyCon.PyCon(screen,
                       (0,0,1000,650 / 4),
                       functions = {
@@ -675,7 +751,8 @@ console = PyCon.PyCon(screen,
                                     'listequipself': listEquipSelf,
                                     'liststatsself': listStatsSelf,
                                     'listequipmob': listEquipMob,
-                                    'liststatsmob': listStatsMob
+                                    'liststatsmob': listStatsMob,
+                                    "a":foobar
                                     },
                       key_calls = {},
                       vari={"A":100,"B":200,"C":300},
@@ -691,16 +768,12 @@ def buildPartyMenu():
     partymenu.rect.y = 500
     party_list.add(partymenu)
     global placementcounter
-    for enum,i in enumerate(backgroundparty, 1):
-        if enum == 0:
-            enumfixed = 0
-        else:
-            enumfixed = enum-1
-        image = base_sprite(image = images[enumfixed])
+    for enum,i in enumerate(backgroundparty, 0):
+        image = base_sprite(image = images[enum])
         image.rect.x = placementcounter
         image.rect.y = 510
-        texthealth = text(f"Turtle {enum} - Hp: {i.health}/{i.maxHealth}","Comic Sans MS",16,(66, 134, 244),placementcounter-15,593.5,255)
-        placementcounter+=195
+        texthealth = text(f"{i.name} - Hp: {i.health}/{i.maxHealth}","Comic Sans MS",16,(66, 134, 244),placementcounter-15,593.5,255)
+        placementcounter+=250
         party_list.add(image)
         party_list.add(texthealth)
         party_menu_list.append((image,i))
@@ -773,14 +846,18 @@ def buildTurnAlertMenu(event):
     entertocontinue = text("Press enter or click to continue","Comic Sans MS",20, (255,0,0),330,610,255)
     turnalert_list.add(entertocontinue)
 
-    wrapped = wrap(event,130)
+    wrapped = wrap(event,80)
     for textblock in wrapped:
         event_text = text(textblock,"Comic Sans MS",25,(66,134,244),5,counter,255)
         counter += 30
         turnalert_list.add(event_text)
 
 
-#pygame.key.set_repeat(10,10)
+
+def buildEquipmentMenu():
+    equipment_menu = base_sprite(image = "images\\partyMenu.png")
+    equipment_list.add(equipment_menu)
+    print([turtle.isAlive for turtle in backgroundparty])
 
 def spawnmob(mob=None):
     patker = entity.enemyCharacter('Patker', 20, 5, 5, 5, 0, 50, 1, 20, True, None, None, None, None, 'images\\patker.png')
@@ -816,7 +893,8 @@ while running:
 
     while fight: #fight part
         #must be first in case all turtles are dead
-        if backgroundparty == []:
+        partydead = all(x.health == 0 for x in backgroundparty)
+        if partydead:
             gameover = True
             running = False
             fight = False
@@ -829,14 +907,55 @@ while running:
         current_turtle = backgroundparty[0]
 
 
-        if not turn:
-            active_mob.handleEffects()
+        if not turn and (not turnalert):
+            print("starting mob turn")
+            effectReturn = active_mob.handleEffects()
+            print(effectReturn)
+            if len(effectReturn) > 1:
+                buildTurnAlertMenu(effectReturn[1])
+                turnalert = True
+                if effectReturn[0] == False:
+                    passturn = False
+                else:
+                    passturn = True
+                continue
+
             if active_mob.isAlive != False:
-                active_mob.Attack(current_turtle)
+                attack = active_mob.Attack(current_turtle)
+
+                tempalert = ''
+                for index, i in enumerate(attack):
+                    if index > 0:
+                        tempalert += ' and '
+                    tempalert += active_mob.name + ' ' + i[2] + ' '
+                    if i[1] == 'player':
+                        tempalert += current_turtle.name + ' '
+                    else:
+                        tempalert += 'self '
+                    tempalert += 'for ' + str(i[0]) + ' with Basic Attack'
+                    if i[3] != None:
+                        tempalert += ' and '  + i[3]
+                buildTurnAlertMenu(tempalert)
+
+
+                turnalert = True
+                passturn = True
+
                 print("Mob attacked")
                 if current_turtle.isAlive == False:
+                    sprite,image = backgroundparty[0],images[0]
                     backgroundparty.pop(0)
                     images.pop(0)
+                    backgroundparty.append(sprite)
+                    test = Image.open(image).convert("LA").convert("RGBA")
+                    mode = test.mode
+                    size = test.size
+                    data = test.tobytes()
+                    testimage = pygame.image.fromstring(data,size,mode)
+                    images.append(testimage)
+                    buildTurnAlertMenu(f"{active_mob.name} has done {attack[0][0]} damage. {current_turtle.name} has died.")
+                    turnalert = True
+                    passturn = True
 
                 if len(party_list) > 0:
                     party_list.empty()
@@ -844,8 +963,6 @@ while running:
                     party_menu_list = []
                     buildPartyMenu()
 
-                turn = True
-                current_turtle.handleEffects()
             else:
                 fightover = True
 
@@ -865,7 +982,75 @@ while running:
                     if turnalert:
                         turnalert = False
                         turnalert_list.empty()
-                        turn = False #whenever dialog box is closed it will end turn
+                        if passturn:
+                            if turn:
+                                turn = False #whenever dialog box is closed it will end turn
+                            else: #if mob's turn and passturn is true changes it to your turn
+                                effectReturn = current_turtle.handleEffects()
+                                #if effectReturn[0]:
+                                if len(effectReturn) > 1: #checks to see if any effects are active
+                                    buildTurnAlertMenu(effectReturn[1])
+                                    #turn = False buildturnalertmenu sets var turnalert to true, when turnalert is true it listens for enter or click to end turn
+                                    turnalert = True
+                                    if effectReturn[0] == False: #if the effect doesnt end turn
+                                        passturn = False
+                                    else:
+                                        passturn = True
+                                turn = True
+
+                        else:
+                            if not turn:
+                                """
+                                ENTIRE MOB'S TURN
+                                """
+                                if active_mob.isAlive != False:
+                                    attack = active_mob.Attack(current_turtle)
+
+                                    tempalert = ''
+                                    for index, i in enumerate(attack):
+                                        if index > 0:
+                                            tempalert += ' and '
+                                        tempalert += active_mob.name + ' ' + i[2] + ' '
+                                        if i[1] == 'player':
+                                            tempalert += current_turtle.name + ' '
+                                        else:
+                                            tempalert += 'self '
+                                        tempalert += 'for ' + str(i[0]) + ' with Basic Attack'
+                                        if i[3] != None:
+                                            tempalert += ' and '  + i[3]
+                                    buildTurnAlertMenu(tempalert)
+
+
+                                    turnalert = True
+                                    passturn = True
+
+                                    print("Mob attacked")
+                                    if current_turtle.isAlive == False:
+                                        sprite,image = backgroundparty[0],images[0]
+                                        backgroundparty.pop(0)
+                                        images.pop(0)
+                                        backgroundparty.append(sprite)
+                                        test = Image.open(image).convert("LA").convert("RGBA")
+                                        mode = test.mode
+                                        size = test.size
+                                        data = test.tobytes()
+                                        testimage = pygame.image.fromstring(data,size,mode)
+                                        images.append(testimage)
+                                        buildTurnAlertMenu("Your active turtle has died")
+                                        turnalert = True
+                                        passturn = True
+
+                                    if len(party_list) > 0:
+                                        party_list.empty()
+                                        placementcounter = 25
+                                        party_menu_list = []
+                                        buildPartyMenu()
+
+                                else:
+                                    fightover = True
+                                """
+                                END OF ENTIRE MOB'S CODE
+                                """
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
 
@@ -910,57 +1095,90 @@ while running:
                         statsbool = True
 
                 if not statsbutton.rect.collidepoint(event.pos) and (not partybutton.rect.collidepoint(event.pos)) and (turnalert):
+                    turnalertloopbool = True
                     turnalert = False
                     turnalert_list.empty()
-                    turn = False
+                    if passturn:
+                        if turn:
+                            turn = False #whenever dialog box is closed it will end turn
+                        else: #if mob's turn and passturn is true changes it to your turn
+                            effectReturn = current_turtle.handleEffects()
+                            #if effectReturn[0]:
+                            if len(effectReturn) > 1: #checks to see if any effects are active
+                                buildTurnAlertMenu(effectReturn[1])
+                                #turn = False buildturnalertmenu sets var turnalert to true, when turnalert is true it listens for enter or click to end turn
+                                turnalert = True
+                                if effectReturn[0] == False: #if the effect doesnt end turn
+                                    passturn = False
+                                else:
+                                    passturn = True
+                            turn = True
+
+                    else:
+                        if not turn:
+                            """
+                            HANDLES ENTIRE MOB TURN
+                            """
+                            if active_mob.isAlive != False:
+                                attack = active_mob.Attack(current_turtle)
+
+                                tempalert = ''
+                                for index, i in enumerate(attack):
+                                    if index > 0:
+                                        tempalert += ' and '
+                                    tempalert += active_mob.name + ' ' + i[2] + ' '
+                                    if i[1] == 'player':
+                                        tempalert += current_turtle.name + ' '
+                                    else:
+                                        tempalert += 'self '
+                                    tempalert += 'for ' + str(i[0]) + ' with Basic Attack'
+                                    if i[3] != None:
+                                        tempalert += ' and '  + i[3]
+                                buildTurnAlertMenu(tempalert)
+
+
+                                turnalert = True
+                                passturn = True
+
+                                print("Mob attacked")
+                                if current_turtle.isAlive == False:
+                                    sprite,image = backgroundparty[0],images[0]
+                                    backgroundparty.pop(0)
+                                    images.pop(0)
+                                    backgroundparty.append(sprite)
+                                    test = Image.open(image).convert("LA").convert("RGBA")
+                                    mode = test.mode
+                                    size = test.size
+                                    data = test.tobytes()
+                                    testimage = pygame.image.fromstring(data,size,mode)
+                                    images.append(testimage)
+                                    buildTurnAlertMenu("Your active turtle has died")
+                                    turnalert = True
+                                    passturn = True
+
+                                if len(party_list) > 0:
+                                    party_list.empty()
+                                    placementcounter = 25
+                                    party_menu_list = []
+                                    buildPartyMenu()
+
+                            else:
+                                fightover = True
+
+
+                            """
+                            END OF ENTIRE MOB'S TURN
+                            """
+
 
 
 
 
                 if turn and (not turnalert):
-                    if runbutton.rect.collidepoint(event.pos) and attack_active == False:
-                        #todo when speed added have it calculate if you run. if fail turn = False
-                        fightover = True
 
-                    elif len(attack_menu_list) > 0:
-                        for sprite in attack_menu_list:
-                            if sprite[0].rect.collidepoint(event.pos):
-                                    if sprite[0].text == "Cancel":
-                                        attack_active = False
-                                        attack_menu.empty()
-                                        attack_menu_list = []
-                                    else:
-                                        attack = (current_turtle.abilities[sprite[1]][0])(active_mob)
-                                        if attack != False:
-                                            if active_mob.isAlive == False:
-                                                fightover = True
-                                            # turn = False
-                                            buildTurnAlertMenu(f'Turtle attacked {active_mob.name} with move "{sprite[1]}" for {attack}')
-                                            turnalert = True
-                                        attack_active = False
-                                        attack_menu.empty()
-                                        attack_menu_list = []
-
-                    elif attackbutton.rect.collidepoint(event.pos) and attack_active == False:
-                        if attack_active:
-                            attack_active = False
-                            attack_menu.empty()
-                            attack_menu_list = []
-
-
-                        else: #build menu
-                            buildAttackMenu()
-
-
-
-
-
-
-                            #current_turtle.Attack(active_mob)
-
-                    elif len(party_list) > 0:
+                    if len(party_list) > 0:
                         for sprite in party_menu_list:
-                            if sprite[0].rect.collidepoint(event.pos):
+                            if sprite[0].rect.collidepoint(event.pos) and sprite[1].isAlive:
                                 if selection1: #first selected
                                     if selection1 == sprite[1]:
                                         selection1 = False
@@ -981,10 +1199,11 @@ while running:
                                         party_list.empty()
                                         placementcounter = 25
                                         party_menu_list = []
-                                        buildPartyMenu()
+                                        #buildPartyMenu()
                                         # turn = False
                                         buildTurnAlertMenu("Swapped party member")
                                         turnalert = True
+                                        passturn = True
                                         party_list.remove(pointer1)
 
                                 else: #none selected
@@ -993,6 +1212,59 @@ while running:
                                     pointer1.rect.x = sprite[0].rect.x - 30
                                     pointer1.rect.y = sprite[0].rect.y + 50
                                     party_list.add(pointer1)
+
+                    elif runbutton.rect.collidepoint(event.pos) and attack_active == False and (not turnalertloopbool):
+                        # TODO when speed added have it calculate if you run. if fail turn = False
+                        fightover = True
+
+
+
+                    elif len(attack_menu_list) > 0 and (not turnalertloopbool):
+                        for sprite in attack_menu_list:
+                            if sprite[0].rect.collidepoint(event.pos):
+                                    if sprite[0].text == "Cancel":
+                                        attack_active = False
+                                        attack_menu.empty()
+                                        attack_menu_list = []
+                                    else:
+                                        attack = (current_turtle.abilities[sprite[1]][0])(active_mob)
+                                        if attack != False:
+                                            if active_mob.isAlive == False:
+                                                fightover = True
+                                            # [[character.trueDamage(self.attack*2), 'enemy', 'damaged', None]]
+                                            #turn = False
+
+                                            tempalert = ''
+                                            for index, i in enumerate(attack):
+                                                if index > 0:
+                                                    tempalert += ' and '
+                                                tempalert += current_turtle.name + ' ' + i[2] + ' '
+                                                if i[1] == 'enemy':
+                                                    tempalert += active_mob.name+ ' '
+                                                else:
+                                                    tempalert += 'self '
+                                                tempalert += 'for ' + str(i[0]) + ' with ' + sprite[1]
+                                                if i[3] != None:
+                                                    tempalert += ' and '  + i[3]
+                                            buildTurnAlertMenu(tempalert)
+                                            turnalert = True
+                                            passturn = True
+                                        attack_active = False
+                                        attack_menu.empty()
+                                        attack_menu_list = []
+
+                    elif attackbutton.rect.collidepoint(event.pos) and attack_active == False and (not turnalertloopbool):
+                        if attack_active:
+                            attack_active = False
+                            attack_menu.empty()
+                            attack_menu_list = []
+
+
+                        else: #build menu
+                            buildAttackMenu()
+
+
+
 
 
 
@@ -1011,7 +1283,9 @@ while running:
         else:
             foobar = ""
         hptext.print_text(f"Hp: {current_turtle.health}/{current_turtle.maxHealth}{foobar}",60,495)
-
+        joined = ",".join([x for x in active_mob.effects if (active_mob.effects[x])[0]])
+        active_mob_effects.print_text(f"{joined.title()}",0,active_mob_effects.rect.y)
+        active_mob_effects.rect.x = 1000-active_mob_effects.rect[2] - 10
         mob_fight.remove(mob_info)
         mob_fight.remove(turntext)
         if turn:
@@ -1027,6 +1301,7 @@ while running:
         party_list.update()
         sprites_list.update()
         general_sprites.update()
+        equipment_list.update()
         attack_menu.update()
         screen.fill(color) #gets rid of all sprites without removing them from groups
         general_sprites.draw(screen)
@@ -1034,10 +1309,13 @@ while running:
         turnalert_list.draw(screen)
         mob_fight.draw(screen)
         party_list.draw(screen)
+        equipment_list.draw(screen)
         console.draw()
         pygame.display.flip()
+        turnalertloopbool = False
         #fight = False
         if fightover:
+            for turtle in backgroundparty: turtle.handleBuffs()
             mob_fight.empty()
             general_sprites.empty()
             fightover = False
@@ -1051,6 +1329,10 @@ while running:
 
             turnalert = False
             turnalert_list.empty()
+            for turtle in backgroundparty: #blanks effects after battle
+                turtle.effects = {'burned': [False, [4, 8], 0], 'frozen': [False, [2, 4], 0], 'confused': [False, [6, 10], 0]}
+
+            passturn = False
 
 
     if randint(0,500) == 0: #mob spawner
@@ -1078,9 +1360,18 @@ while running:
                     buildPartyMenu()
                     menubool = True
 
+            elif equipmentbutton.rect.collidepoint(event.pos): #TODO make it toggle with menubool
+                if equipmentbool: #TODO
+                    pass
+                    #empty
+                else:
+                    buildEquipmentMenu()
+                    equipmentbool = True
+
+
             if len(party_list) > 0:
                 for sprite in party_menu_list:
-                    if sprite[0].rect.collidepoint(event.pos):
+                    if sprite[0].rect.collidepoint(event.pos) and sprite[1].isAlive:
                         if selection1: #first selected
                             if selection1 == sprite[1]:
                                 selection1 = False
@@ -1160,7 +1451,7 @@ while running:
             if direction != olddirection:
                 i.image = pygame.transform.flip(i.image,100,0)
         move = False
-        '''
+    '''
 
     collision = pygame.sprite.groupcollide(mobs_list,party,True,False)
     if collision: #handle one time things here before fight starts
@@ -1217,7 +1508,10 @@ while running:
             foobar = ""
         hptext = text(f"Hp: {current_turtle.health}/{current_turtle.maxHealth}{foobar}","Comic Sans MS",18,(66,134,244),60,495,255)
         mob_fight.add(hptext)
-
+        joined = ",".join([x for x in active_mob.effects if (active_mob.effects[x])[0]])
+        active_mob_effects = text(f"{joined.title()}","Comic Sans MS",18,(66,134,244),0,active_mob.image.get_rect().size[1]+45,255)
+        active_mob_effects.rect.x = 1000-active_mob_effects.rect[2] - 10
+        mob_fight.add(active_mob_effects)
 
 
     screen.blit(game_map,(scrollX*2,0))
@@ -1226,11 +1520,13 @@ while running:
     party.update()
     mobs_list.update()
     party_list.update()
+    equipment_list.update()
     #screen.fill(color)
     sprites_list.draw(screen)
     party.draw(screen)
     mobs_list.draw(screen)
     party_list.draw(screen)
+    equipment_list.draw(screen)
     console.draw()
     pygame.display.flip()
     clock.tick(60)
@@ -1253,3 +1549,6 @@ else: #safely shuts down pygame and other data
 # TODO make it so that turtles can die
 # TODO add health to current_turtle displayed
 # TODO enemies able to die from burn
+
+#TODO make it list active mob's status effects
+#TODO change names from turtle 1 to actual names
