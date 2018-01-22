@@ -1417,16 +1417,47 @@ while running:
 
 
             elif len(equipment_list) > 0:
-                for button in button_list:
-                    if button[0].rect.collidepoint(event.pos):
-                        exitbutton = text("Exit","Comic Sans MS",18,(66,134,244),960,620,255)
-                        equipment_list.add(exitbutton)
-                        equipment_turtle = button[1]
-                        temp_list = equipment_list
-                        for sprite in temp_list:
-                            if any(sprite in x for x in button_list):
-                                equipment_list.remove(sprite)
-                        #build equipment turtle menu
+                if len(button_list) == 4: #if in main menu (lists all 4 turtles)
+                    for button in button_list:
+                        if button[0].rect.collidepoint(event.pos):
+                            exitbutton = text("Exit","Comic Sans MS",18,(66,134,244),960,620,255)
+                            equipment_list.add(exitbutton)
+                            equipment_turtle = button[1]
+                            list_temp = equipment_list
+                            for sprite in list_temp:
+                                if any(sprite in x for x in button_list):
+                                    equipment_list.remove(sprite)
+                            button_list = []
+                            levelButton = text("Level tree","Comic Sans MS",46,(66,134,244),225,540,255,(255,255,255))
+                            equipmentButton = text("Equipment","Comic Sans MS",46,(66,134,244),500,540,255,(255,255,255))
+                            equipment_list.add(levelButton)
+                            equipment_list.add(equipmentButton)
+                            button_list.append(levelButton)
+                            button_list.append(equipmentButton)
+
+                            #build equipment turtle menu
+                elif len(button_list) == 2: #turtle has been selected - 2 buttons (equipment/level tree)
+                    for button in button_list:
+                        if button.rect.collidepoint(event.pos):
+                            tempcount = 15
+                            for i in button_list:
+                                equipment_list.remove(i)
+                            if button.text == "Level tree":
+                                stats = equipment_turtle.listStats()
+                                for level in stats:
+                                        leveltext = text(f"{level}: {stats[level]}","Comic Sans MS",24,(66,134,244),tempcount,575,255)
+                                        equipment_list.add(leveltext)
+                                        tempcount+=leveltext.rect[2]+30
+                                turtle_text = text(f"{equipment_turtle.name}'s stats","Comic Sans MS",36,(66,134,244),300,510,255)
+                                equipment_list.add(turtle_text)
+                                button_list = []
+
+                            elif button.text == "Equipment":
+                                equipment = equipment_turtle.listSelf()
+                                for i in equipment:
+                                    print(i)
+                                    print(equipment[i])
+
 
 
                 if equipment_turtle != None:
