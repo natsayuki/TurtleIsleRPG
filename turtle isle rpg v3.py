@@ -211,6 +211,12 @@ class entity():
                 except:
                     temp[i] = eval('self.' + i)
             return temp
+
+        def listSelfTest(self):
+            temp = {}
+            for i in ['head', 'torso', 'feet', 'hand']:
+                temp[i] = eval('self.' + i)
+            return temp
         def listStats(self):
                 return {'health': self.health, 'attack': self.attack, 'strength': self.strength, 'defence': self.defence, 'magic': self.magic, 'speed': self.speed}
         def listLevel(self):
@@ -319,13 +325,13 @@ class entity():
     class item():
         # effects will take a dictionary eg:
         # {'heath': '10', 'attack': '5'}
-        class equipable():
+        class equipable(pygame.sprite.Sprite):
             def __init__(self, name, description, type, effects, image):
+                pygame.sprite.Sprite.__init__(self)
                 self.name = name
                 self.description = description
                 self.type = type
                 self.effects = effects
-                pygame.sprite.Sprite.__init__(self)
                 self.image = pygame.image.load(image)
                 pygame.draw.rect(self.image, (0,0,0), [5000000,5000000,0,0])
                 self.rect = self.image.get_rect()
@@ -641,6 +647,8 @@ turnalert = False
 passturn = False
 button_list = []
 equipment_turtle = None
+inventory = []
+consumeable_inventory = []
 
 
 #     def __init__(self, name,  initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
@@ -901,7 +909,7 @@ def buildEquipmentMenu():
     counter = 17.5
     equipment_menu = base_sprite(image = "images\\partyMenu.png",x=0,y=500)
     equipment_list.add(equipment_menu)
-    for turtle in [turtle for turtle in backgroundparty if turtle.isAlive]:
+    for turtle in backgroundparty:
         button = text(turtle.name,"Comic Sans MS",40,(66,134,244),counter,540,255,(255,255,255))
         counter+=button.rect[2]+30
         equipment_list.add(button)
@@ -1453,10 +1461,19 @@ while running:
                                 button_list = []
 
                             elif button.text == "Equipment":
-                                equipment = equipment_turtle.listSelf()
+                                temp = 20
+                                equipment = equipment_turtle.listSelfTest()
                                 for i in equipment:
-                                    print(i)
-                                    print(equipment[i])
+                                    if equipment[i] != None:
+                                        equipmentsprite = equipment[i]
+                                        equipmentsprite.rect.x = temp+20
+                                        equipmentsprite.rect.y = 540
+                                        equipmenttext = text(f"{i}: {equipment[i].name}","Comic Sans MS",20,(66,134,244),temp,520,255)
+                                        equipment_list.add(equipmentsprite)
+                                    else:
+                                        equipmenttext = text(f"{i}: {equipment[i]}","Comic Sans MS",20,(66,134,244),temp,520,255)
+                                    equipment_list.add(equipmenttext)
+                                    temp+=200
 
 
 
