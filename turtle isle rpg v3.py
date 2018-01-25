@@ -33,6 +33,8 @@ general_sprites = pygame.sprite.Group()
 attack_menu = pygame.sprite.Group()
 turnalert_list = pygame.sprite.Group()
 equipment_list = pygame.sprite.Group()
+loot_list = pygame.sprite.Group()
+inventory_list = pygame.sprite.Group()
 
 ###########
 # classes #
@@ -318,6 +320,11 @@ class entity():
                     temp[i] = eval('self.' + i + '.name')
                 except:
                     temp[i] = eval('self.' + i)
+            return temp
+        def listSelfTest(self):
+            temp = {}
+            for i in ['head', 'torso', 'feet', 'hand']:
+                temp[i] = eval('self.' + i)
             return temp
         def listStats(self):
             return {'health': self.health, 'attack': self.attack, 'strength': self.strength, 'defence': self.defence, 'magic': self.magic, 'speed': self.speed}
@@ -621,6 +628,7 @@ class text(pygame.sprite.Sprite): #helpful class for rendering text as a sprite
 ##############
 # predefined variables #
 ##############
+
 running = True
 gameover = False
 positions = []
@@ -647,8 +655,9 @@ turnalert = False
 passturn = False
 button_list = []
 equipment_turtle = None
-inventory = []
-consumeable_inventory = []
+inventory = {}
+consumeable_inventory = {}
+loot_array = []
 
 
 #     def __init__(self, name,  initHealth, initAttack, initdefence, initStrength, initMagic, initSpeed, initLevel, initExp, maxHealth, head, torso, feet, hand, image):
@@ -856,8 +865,23 @@ def buildStatMenu():
         mob_fight.add(baz)
         temp_list.append(baz)
         temp += 20
-
-
+def buildDeezNuts(loot):
+    x = 50
+    lootMenu = base_sprite(image="images\\partyMenu.png")
+    lootMenu.rect.x = 0
+    lootMenu.rect.y = 500
+    loot_list.add(lootMenu)
+    info = text("LOOT ALL","Comic Sans MS",20,(66,134,244),5,615,255,(255,255,255))
+    exit = text("exit", "Comic Sans MS", 20, (66, 134, 244), 600, 615, 255, (255, 255, 255))
+    loot_list.add(info)
+    loot_list.add(exit)
+    for i in loot:
+        if i != None:
+            loot[i].rect.x = x
+            loot[i].rect.y = 550
+            loot_list.add(loot[i])
+            loot_array.append(loot[i])
+            x += 100
 def buildAttackMenu():
     global attack_active
     attack_menu_box = base_sprite(image="images\\attackMenu2.png",x=30,y=505)
@@ -876,6 +900,27 @@ def buildAttackMenu():
     attack_menu.add(cancelbutton)
     attack_menu_list.append((cancelbutton,None))
     attack_active = True
+
+##########
+# random thing #
+##########
+def new_dict(dict1,key,newkey,value):
+    newkeys = []
+    newvalues = []
+    index = list(dict1.keys()).index(key)
+    for enum,i in enumerate(dict1,0):
+        if enum == index:
+            newkeys.append(newkey)
+        else:
+            newkeys.append(i)
+
+    for enum,i in enumerate(dict1.values(),0):
+        if enum == index:
+            newvalues.append(value)
+        else:
+            newvalues.append(i)
+
+    return(dict(zip(newkeys,newvalues)))
 
 
 party.add(turtle)
@@ -1100,6 +1145,8 @@ while running:
 
                                 else:
                                     fightover = True
+                                    buildDeezNuts(active_mob.listSelfTest())
+
                                 """
                                 END OF ENTIRE MOB'S CODE
                                 """
@@ -1257,6 +1304,7 @@ while running:
                                         turnalert = True
                                         passturn = True
                                         party_list.remove(pointer1)
+                                        #TODO make it refresh attack menu if its open
 
                                 else: #none selected
                                     selection1 = sprite[1]
@@ -1355,6 +1403,7 @@ while running:
         general_sprites.update()
         equipment_list.update()
         attack_menu.update()
+        loot_list.update()
         screen.fill(color) #gets rid of all sprites without removing them from groups
         general_sprites.draw(screen)
         attack_menu.draw(screen)
@@ -1362,14 +1411,83 @@ while running:
         mob_fight.draw(screen)
         party_list.draw(screen)
         equipment_list.draw(screen)
+        loot_list.draw(screen)
         console.draw()
         pygame.display.flip()
         turnalertloopbool = False
         #fight = False
         if fightover:
-            for turtle in backgroundparty: turtle.handleBuffs()
+            test = True
+            if not active_mob.isAlive:
+                buildDeezNuts(active_mob.listSelfTest())
+                while test: #new loop until loot menu is finished
+                    for event in pygame.event.get():
+                        if event.type == pygame.MOUSEBUTTONDOWN:
+
+                            loot_array_temp = loot_array
+                            for button in loot_array_temp:
+                                if button.rect.collidepoint(event.pos):
+                                    loot_list.remove(button)
+                                    loot_array.remove(button)
+
+
+                                    if button.__class__.__name__ == "equipable" or button.__class__.__name__ == "keyItem":
+                                        try:
+                                            inventory[button] = inventory[button] + 1
+                                        except:
+                                            inventory[button] = 1
+                                    else:
+                                        try:
+                                            consumeable_inventory[button]+=1
+                                        except:
+                                            consumeable_inventory[button] = 1
+                            for i in loot_list:
+                                if i.__class__.__name__ == "text":
+                                    if i.rect.collidepoint(event.pos):
+                                        if i.text == "exit":
+                                            test = False
+                                        elif i.text == "LOOT ALL":
+                                            loot_array_temp = tuple(loot_array)
+                                            for button in loot_array_temp:
+                                                loot_list.remove(button)
+                                                loot_array.remove(button)
+
+                                                if button.__class__.__name__ == "equipable" or button.__class__.__name__ == "keyItem":
+                                                    try:
+                                                        inventory[button] = inventory[button] + 1
+                                                    except:
+                                                        inventory[button] = 1
+                                                else:
+                                                    try:
+                                                        consumeable_inventory[button]+=1
+                                                    except:
+                                                        consumeable_inventory[button] = 1
+                                            test = False
+
+
+                    mob_fight.update()
+                    party_list.update()
+                    sprites_list.update()
+                    general_sprites.update()
+                    equipment_list.update()
+                    attack_menu.update()
+                    loot_list.update()
+                    screen.fill(color) #gets rid of all sprites without removing them from groups
+                    general_sprites.draw(screen)
+                    attack_menu.draw(screen)
+                    turnalert_list.draw(screen)
+                    mob_fight.draw(screen)
+                    party_list.draw(screen)
+                    equipment_list.draw(screen)
+                    loot_list.draw(screen)
+                    console.draw()
+                    pygame.display.flip()
+
+            for turtle in backgroundparty:
+                turtle.handleBuffs()
             mob_fight.empty()
             general_sprites.empty()
+            loot_list.empty()
             fightover = False
             fight = False
             turn = True
@@ -1415,6 +1533,7 @@ while running:
             elif equipmentbutton.rect.collidepoint(event.pos): #TODO make it toggle with menubool
                 if equipmentbool: #TODO
                     equipment_list.empty()
+                    inventory_list.empty()
                     equipmentbool = False
                     button_list = []
                     equipment_turtle = None
@@ -1431,7 +1550,7 @@ while running:
                             exitbutton = text("Exit","Comic Sans MS",18,(66,134,244),960,620,255)
                             equipment_list.add(exitbutton)
                             equipment_turtle = button[1]
-                            list_temp = equipment_list
+                            list_temp = tuple(equipment_list)
                             for sprite in list_temp:
                                 if any(sprite in x for x in button_list):
                                     equipment_list.remove(sprite)
@@ -1445,6 +1564,9 @@ while running:
 
                             #build equipment turtle menu
                 elif len(button_list) == 2: #turtle has been selected - 2 buttons (equipment/level tree)
+
+
+
                     for button in button_list:
                         if button.rect.collidepoint(event.pos):
                             tempcount = 15
@@ -1467,21 +1589,69 @@ while running:
                                     if equipment[i] != None:
                                         equipmentsprite = equipment[i]
                                         equipmentsprite.rect.x = temp+20
-                                        equipmentsprite.rect.y = 540
-                                        equipmenttext = text(f"{i}: {equipment[i].name}","Comic Sans MS",20,(66,134,244),temp,520,255)
+                                        equipmentsprite.rect.y = 550
+                                        equipmenttext = text(f"{i}: ","Comic Sans MS",20,(66,134,244),temp,520,255)
+                                        text2 = text(str(equipment[i].name),"Comic Sans MS",20,(66,134,244),temp+(equipmenttext.rect[2]),520,255)
                                         equipment_list.add(equipmentsprite)
                                     else:
-                                        equipmenttext = text(f"{i}: {equipment[i]}","Comic Sans MS",20,(66,134,244),temp,520,255)
+                                        equipmenttext = text(f"{i}: ","Comic Sans MS",20,(66,134,244),temp,520,255)
+                                        text2 = text(str(equipment[i]),"Comic Sans MS",20,(66,134,244),temp+(equipmenttext.rect[2]),520,255)
                                     equipment_list.add(equipmenttext)
-                                    temp+=200
+                                    equipment_list.add(text2)
+                                    temp+=equipmenttext.rect[2]+text2.rect[2]+25
+
+
+
+                                x = 600
+                                y = 510
+                                rowcounter = 0
+                                for item in inventory:
+                                    item.rect.x = x
+                                    item.rect.y = y
+                                    quantity = text(str(inventory[item]),"Comic Sans MS",14,(66,134,244),x+item.rect[2]+x,+10,y+item.rect[1]-10,255)
+                                    x+=60
+                                    rowcounter+=1
+                                    if rowcounter == 3:
+                                        y+=60
+                                        rowcounter = 0
+                                        x = 600
+                                    inventory_list.add(item)
+                                    inventory_list.add(quantity)
 
 
 
                 if equipment_turtle != None:
+                    #TODO add part that if you click on item while its equiped it puts it back in inventory
                     #handle clicks on individual turtle's armor and items menu
+                    inventory_temp = dict(inventory)
+                    for item in inventory_temp:
+                        if item.rect.collidepoint(event.pos):
+                            olditem = equipment_turtle.listSelfTest()[item.type]
+                            if olditem == None:
+                                equipment_turtle.equip(item)
+                                del inventory[item]
+                            else:
+                                if inventory[item] == 1: #removed from inventory
+                                    try:
+                                        inventory = new_dict(inventory,item,olditem,inventory[olditem]+1)
+
+                                    except:
+                                        inventory = new_dict(inventory,item,olditem,1)
+                                        print(inventory)
+                                else:
+                                    inventory.append(olditem)
+                                    inventory[item] -= 1
+
+
+                                equipment_turtle.equip(item)
+
+                                # #TODO clean menu up and make it update when switched
+
+
 
                     if exitbutton.rect.collidepoint(event.pos):
                         equipment_list.empty()
+                        inventory_list.empty()
                         equipment_turtle = None
                         button_list = []
                         buildEquipmentMenu()
@@ -1638,13 +1808,17 @@ while running:
     party.update()
     mobs_list.update()
     party_list.update()
+    loot_list.update()
     equipment_list.update()
+    inventory_list.update()
     #screen.fill(color)
     sprites_list.draw(screen)
     party.draw(screen)
     mobs_list.draw(screen)
     party_list.draw(screen)
+    loot_list.draw(screen)
     equipment_list.draw(screen)
+    inventory_list.draw(screen)
     console.draw()
     pygame.display.flip()
     clock.tick(60)
