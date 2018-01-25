@@ -1628,22 +1628,46 @@ while running:
                         if item.rect.collidepoint(event.pos):
                             olditem = equipment_turtle.listSelfTest()[item.type]
                             if olditem == None:
-                                equipment_turtle.equip(item)
+                                equipment_turtle.equip()
                                 del inventory[item]
                             else:
-                                if inventory[item] == 1: #removed from inventory
+                                if inventory[item] == 1:
+                                    del inventory[item]
                                     try:
-                                        inventory = new_dict(inventory,item,olditem,inventory[olditem]+1)
-
+                                        inventory[olditem] = inventory[olditem] + 1
                                     except:
-                                        inventory = new_dict(inventory,item,olditem,1)
-                                        print(inventory)
+                                        inventory[olditem] = 1
+
                                 else:
-                                    inventory.append(olditem)
+                                    try:
+                                        inventory[olditem] = inventory[olditem] + 1
+                                    except:
+                                        inventory[olditem] = 1
                                     inventory[item] -= 1
 
 
+
                                 equipment_turtle.equip(item)
+                            # if olditem == None:
+                            #     equipment_turtle.equip(item)
+                            #     del inventory[item]
+                            # else:
+                            #     if inventory[item] == 1: #removed from inventory
+                            #         try:
+                            #             inventory = new_dict(inventory,item,olditem,inventory[olditem]+1)
+                            #
+                            #         except:
+                            #             inventory = new_dict(inventory,item,olditem,1)
+                            #             print(inventory)
+                            #     else:
+                            #         try:
+                            #             inventory[olditem] = inventory[olditem] + 1
+                            #         except:
+                            #             inventory[olditem] = 1
+                            #         inventory[item] -= 1
+                            #
+                            #
+                            #     equipment_turtle.equip(item)
 
                                 # #TODO clean menu up and make it update when switched
 
