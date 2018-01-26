@@ -1544,6 +1544,16 @@ while running:
 
 
             elif len(equipment_list) > 0:
+                try:
+                    if exitbutton.rect.collidepoint(event.pos):
+                        equipment_list.empty()
+                        inventory_list.empty()
+                        equipment_turtle = None
+                        button_list = []
+                        buildEquipmentMenu()
+                except:
+                    pass
+
                 if len(button_list) == 4: #if in main menu (lists all 4 turtles)
                     for button in button_list:
                         if button[0].rect.collidepoint(event.pos):
@@ -1599,7 +1609,10 @@ while running:
                                     equipment_list.add(equipmenttext)
                                     equipment_list.add(text2)
                                     temp+=equipmenttext.rect[2]+text2.rect[2]+25
-
+                                    #[equipment_list.remove(x) for x in button_list]
+                                    for i in button_list:
+                                        equipment_list.remove(i)
+                                    button_list = []
 
 
                                 x = 600
@@ -1608,7 +1621,7 @@ while running:
                                 for item in inventory:
                                     item.rect.x = x
                                     item.rect.y = y
-                                    quantity = text(str(inventory[item]),"Comic Sans MS",14,(66,134,244),x+item.rect[2]+x,+10,y+item.rect[1]-10,255)
+                                    quantity = text(str(inventory[item]),"Comic Sans MS",14,(66,134,244),x+item.rect[2]-5,y+item.rect[3]-5,255)
                                     x+=60
                                     rowcounter+=1
                                     if rowcounter == 3:
@@ -1620,16 +1633,19 @@ while running:
 
 
 
-                if equipment_turtle != None:
+                elif equipment_turtle != None:
                     #TODO add part that if you click on item while its equiped it puts it back in inventory
                     #handle clicks on individual turtle's armor and items menu
                     inventory_temp = dict(inventory)
                     for item in inventory_temp:
                         if item.rect.collidepoint(event.pos):
                             olditem = equipment_turtle.listSelfTest()[item.type]
+                            print(inventory)
                             if olditem == None:
-                                equipment_turtle.equip()
-                                del inventory[item]
+                                if inventory[item] == 1:
+                                    del inventory[item]
+                                else:
+                                    inventory[item] = inventory[item] - 1
                             else:
                                 if inventory[item] == 1:
                                     del inventory[item]
@@ -1643,11 +1659,52 @@ while running:
                                         inventory[olditem] = inventory[olditem] + 1
                                     except:
                                         inventory[olditem] = 1
-                                    inventory[item] -= 1
+                                    inventory[item] = inventory[item] - 1
 
 
+                            print(inventory)
+                            equipment_turtle.equip(item)
 
-                                equipment_turtle.equip(item)
+
+                            inventory_list.empty()
+                            x = 600
+                            y = 510
+                            rowcounter = 0
+                            for item in inventory:
+                                item.rect.x = x
+                                item.rect.y = y
+                                quantity = text(str(inventory[item]),"Comic Sans MS",14,(66,134,244),x+item.rect[2]-5,y+item.rect[3]-5,255)
+                                x+=60
+                                rowcounter+=1
+                                if rowcounter == 3:
+                                    y+=60
+                                    rowcounter = 0
+                                    x = 600
+                                inventory_list.add(item)
+                                inventory_list.add(quantity)
+
+                            temp = 20
+                            equipment_list_temp = tuple(equipment_list)
+                            for i in equipment_list_temp:
+                                if i.__class__.__name__ == "text" or i.__class__.__name__ == "equipable" or  i.__class__.__name__ == "keyItem" or  i.__class__.__name__ == "consumable":
+                                    equipment_list.remove(i)
+                            equipment = equipment_turtle.listSelfTest()
+                            for i in equipment:
+                                if equipment[i] != None:
+                                    equipmentsprite = equipment[i]
+                                    equipmentsprite.rect.x = temp+20
+                                    equipmentsprite.rect.y = 550
+                                    equipmenttext = text(f"{i}: ","Comic Sans MS",20,(66,134,244),temp,520,255)
+                                    text2 = text(str(equipment[i].name),"Comic Sans MS",20,(66,134,244),temp+(equipmenttext.rect[2]),520,255)
+                                    equipment_list.add(equipmentsprite)
+                                else:
+                                    equipmenttext = text(f"{i}: ","Comic Sans MS",20,(66,134,244),temp,520,255)
+                                    text2 = text(str(equipment[i]),"Comic Sans MS",20,(66,134,244),temp+(equipmenttext.rect[2]),520,255)
+                                equipment_list.add(equipmenttext)
+                                equipment_list.add(text2)
+                                temp+=equipmenttext.rect[2]+text2.rect[2]+25
+                            break
+
                             # if olditem == None:
                             #     equipment_turtle.equip(item)
                             #     del inventory[item]
@@ -1668,17 +1725,12 @@ while running:
                             #
                             #
                             #     equipment_turtle.equip(item)
+                            #
+                            #     #TODO clean menu up and make it update when switched
 
-                                # #TODO clean menu up and make it update when switched
 
 
 
-                    if exitbutton.rect.collidepoint(event.pos):
-                        equipment_list.empty()
-                        inventory_list.empty()
-                        equipment_turtle = None
-                        button_list = []
-                        buildEquipmentMenu()
 
 
             if len(party_list) > 0:
