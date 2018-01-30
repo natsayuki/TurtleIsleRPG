@@ -855,6 +855,7 @@ def buildStatMenu():
         mob_fight.add(baz)
         temp_list.append(baz)
         temp += 20
+        #
 
     active_stats = active_mob.listStats()
     temp = 510
