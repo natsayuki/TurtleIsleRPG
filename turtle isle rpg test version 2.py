@@ -877,7 +877,7 @@ def buildDeezNuts(loot):
     loot_list.add(info)
     loot_list.add(exit)
     for i in loot:
-        if i != None:
+        if loot[i] != None:
             loot[i].rect.x = x
             loot[i].rect.y = 550
             loot_list.add(loot[i])
@@ -983,6 +983,84 @@ def spawnmob(mob=None):
     spawnedmob.rect.y = randint(50,400)
     mobs_list.add(spawnedmob)
 
+
+
+
+def mobTurn(handleEffects=False):
+    global turnalert
+    global passturn
+    global placementcounte
+    global fightover
+    global current_turtle
+    global attack_menu_list
+    global attack_active
+    global party_menu_list
+    if handleEffects:
+        effectReturn = active_mob.handleEffects()
+        print(effectReturn)
+        if len(effectReturn) > 1:
+            buildTurnAlertMenu(effectReturn[1])
+            turnalert = True
+            if effectReturn[0] == False:
+                passturn = False
+            else:
+                passturn = True
+            return True
+
+    if active_mob.isAlive != False:
+        attack = active_mob.Attack(current_turtle)
+
+        tempalert = ''
+        for index, i in enumerate(attack):
+            if index > 0:
+                tempalert += ' and '
+            tempalert += active_mob.name + ' ' + i[2] + ' '
+            if i[1] == 'player':
+                tempalert += current_turtle.name + ' '
+            else:
+                tempalert += 'self '
+            tempalert += 'for ' + str(i[0]) + ' with Basic Attack'
+            if i[3] != None:
+                tempalert += ' and '  + i[3]
+        buildTurnAlertMenu(tempalert)
+
+
+        turnalert = True
+        passturn = True
+
+        print("Mob attacked")
+        if current_turtle.isAlive == False:
+            sprite,image = backgroundparty[0],images[0]
+            backgroundparty.pop(0)
+            images.pop(0)
+            backgroundparty.append(sprite)
+            images.append(image)
+            buildTurnAlertMenu(f"{active_mob.name} has done {attack[0][0]} damage. {current_turtle.name} has died.")
+            turnalert = True
+            passturn = True
+
+            #updates current_turtle and attack menu
+            if len(attack_menu_list) > 0:
+
+                backgroundparty[0].image = pygame.image.load(images[0])
+                current_turtle = backgroundparty[0]
+                attack_active = False
+                attack_menu.empty()
+                attack_menu_list = []
+                #buildAttackMenu()
+
+
+        if len(party_list) > 0:
+            party_list.empty()
+            placementcounter = 25
+            party_menu_list = []
+            buildPartyMenu()
+
+    else:
+        fightover = True
+
+
+
 while running:
     if gameover:
         running = False
@@ -1011,58 +1089,8 @@ while running:
 
 
         if not turn and (not turnalert):
-            print("starting mob turn")
-            effectReturn = active_mob.handleEffects()
-            print(effectReturn)
-            if len(effectReturn) > 1:
-                buildTurnAlertMenu(effectReturn[1])
-                turnalert = True
-                if effectReturn[0] == False:
-                    passturn = False
-                else:
-                    passturn = True
+            if mobTurn(True):
                 continue
-
-            if active_mob.isAlive != False:
-                attack = active_mob.Attack(current_turtle)
-
-                tempalert = ''
-                for index, i in enumerate(attack):
-                    if index > 0:
-                        tempalert += ' and '
-                    tempalert += active_mob.name + ' ' + i[2] + ' '
-                    if i[1] == 'player':
-                        tempalert += current_turtle.name + ' '
-                    else:
-                        tempalert += 'self '
-                    tempalert += 'for ' + str(i[0]) + ' with Basic Attack'
-                    if i[3] != None:
-                        tempalert += ' and '  + i[3]
-                buildTurnAlertMenu(tempalert)
-
-
-                turnalert = True
-                passturn = True
-
-                print("Mob attacked")
-                if current_turtle.isAlive == False:
-                    sprite,image = backgroundparty[0],images[0]
-                    backgroundparty.pop(0)
-                    images.pop(0)
-                    backgroundparty.append(sprite)
-                    images.append(image)
-                    buildTurnAlertMenu(f"{active_mob.name} has done {attack[0][0]} damage. {current_turtle.name} has died.")
-                    turnalert = True
-                    passturn = True
-
-                if len(party_list) > 0:
-                    party_list.empty()
-                    placementcounter = 25
-                    party_menu_list = []
-                    buildPartyMenu()
-
-            else:
-                fightover = True
 
 
         eventlist = pygame.event.get()
@@ -1098,59 +1126,8 @@ while running:
 
                         else:
                             if not turn:
-                                """
-                                ENTIRE MOB'S TURN
-                                """
-                                if active_mob.isAlive != False:
-                                    attack = active_mob.Attack(current_turtle)
-
-                                    tempalert = ''
-                                    for index, i in enumerate(attack):
-                                        if index > 0:
-                                            tempalert += ' and '
-                                        tempalert += active_mob.name + ' ' + i[2] + ' '
-                                        if i[1] == 'player':
-                                            tempalert += current_turtle.name + ' '
-                                        else:
-                                            tempalert += 'self '
-                                        tempalert += 'for ' + str(i[0]) + ' with Basic Attack'
-                                        if i[3] != None:
-                                            tempalert += ' and '  + i[3]
-                                    buildTurnAlertMenu(tempalert)
-
-
-                                    turnalert = True
-                                    passturn = True
-
-                                    print("Mob attacked")
-                                    if current_turtle.isAlive == False:
-                                        sprite,image = backgroundparty[0],images[0]
-                                        backgroundparty.pop(0)
-                                        images.pop(0)
-                                        backgroundparty.append(sprite)
-                                        test = Image.open(image).convert("LA").convert("RGBA")
-                                        mode = test.mode
-                                        size = test.size
-                                        data = test.tobytes()
-                                        testimage = pygame.image.fromstring(data,size,mode)
-                                        images.append(testimage)
-                                        buildTurnAlertMenu("Your active turtle has died")
-                                        turnalert = True
-                                        passturn = True
-
-                                    if len(party_list) > 0:
-                                        party_list.empty()
-                                        placementcounter = 25
-                                        party_menu_list = []
-                                        buildPartyMenu()
-
-                                else:
-                                    fightover = True
-                                    buildDeezNuts(active_mob.listSelfTest())
-
-                                """
-                                END OF ENTIRE MOB'S CODE
-                                """
+                                if mobTurn():
+                                    continue
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
 
@@ -1216,59 +1193,8 @@ while running:
 
                     else:
                         if not turn:
-                            """
-                            HANDLES ENTIRE MOB TURN
-                            """
-                            if active_mob.isAlive != False:
-                                attack = active_mob.Attack(current_turtle)
-
-                                tempalert = ''
-                                for index, i in enumerate(attack):
-                                    if index > 0:
-                                        tempalert += ' and '
-                                    tempalert += active_mob.name + ' ' + i[2] + ' '
-                                    if i[1] == 'player':
-                                        tempalert += current_turtle.name + ' '
-                                    else:
-                                        tempalert += 'self '
-                                    tempalert += 'for ' + str(i[0]) + ' with Basic Attack'
-                                    if i[3] != None:
-                                        tempalert += ' and '  + i[3]
-                                buildTurnAlertMenu(tempalert)
-
-
-                                turnalert = True
-                                passturn = True
-
-                                print("Mob attacked")
-                                if current_turtle.isAlive == False:
-                                    sprite,image = backgroundparty[0],images[0]
-                                    backgroundparty.pop(0)
-                                    images.pop(0)
-                                    backgroundparty.append(sprite)
-                                    test = Image.open(image).convert("LA").convert("RGBA")
-                                    mode = test.mode
-                                    size = test.size
-                                    data = test.tobytes()
-                                    testimage = pygame.image.fromstring(data,size,mode)
-                                    images.append(testimage)
-                                    buildTurnAlertMenu("Your active turtle has died")
-                                    turnalert = True
-                                    passturn = True
-
-                                if len(party_list) > 0:
-                                    party_list.empty()
-                                    placementcounter = 25
-                                    party_menu_list = []
-                                    buildPartyMenu()
-
-                            else:
-                                fightover = True
-
-
-                            """
-                            END OF ENTIRE MOB'S TURN
-                            """
+                            if mobTurn():
+                                continue
 
 
 
@@ -1310,7 +1236,7 @@ while running:
                                             attack_active = False
                                             attack_menu.empty()
                                             attack_menu_list = []
-                                            buildAttackMenu()
+                                            #buildAttackMenu()
 
                                 else: #none selected
                                     selection1 = sprite[1]
@@ -1425,7 +1351,9 @@ while running:
         if fightover:
             test = True
             if not active_mob.isAlive:
-                buildDeezNuts(active_mob.listSelfTest())
+                test = [i for i in active_mob.listSelf() if active_mob.listSelf()[i] != None]
+                if test  != []:
+                    buildDeezNuts(active_mob.listSelfTest())
                 while test: #new loop until loot menu is finished
                     for event in pygame.event.get():
                         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -1948,3 +1876,4 @@ else: #safely shuts down pygame and other data
 #TODO implement agility attribute for determining first turn
 #TODO add thing that lets you revive turtles
 #TODO optimize inventory menu
+#TODO make it so that it doesnt crash game when mob doesnt have loot
